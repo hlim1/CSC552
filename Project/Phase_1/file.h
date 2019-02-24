@@ -1,3 +1,11 @@
+/*
+ *  Filename: file.h
+ *  Course: CSs 552 Advanced Operating Systems
+ *  Last modified: 2/24/2019
+ *  Author: Terrence Lim
+ *  Summary: 
+ */
+
 #ifndef FILE_H
 #define FILE_H
 
