@@ -19,36 +19,34 @@
 #include <string>
 #include <fstream>
 
-#include <flash.h>
+#include "flash.h"
+#include <time.h>
+#include <sys/stat.h>
 
 class Inode
 {
-    std::string filename;
-    std::string permission;
-    std::string owner;
-    std::string group; // Default is same as the owner's username
+    mode_t m_mode; // Mode (or permission) of a file or directory
+    uid_t m_owner; // Set the defualt to the current user id
+    gid_t m_group; // Set the default to same as the owner's username
 
-    u_int filesize;
-    u_int inum;
+    u_int m_filesize;
+    u_int m_inum;
 
-    u_int* dp_1;  // 4 direct pointers to the first 4 block of the of the file
-    u_int* dp_2;
-    u_int* dp_3;
-    u_int* dp_4;
-    u_int* indp; // Indirect pointer to a block of direct pointers
+    u_int* m_direct_pointer[4]; // 4 direct pointers to the first 4 block of the of the file
+    // u_int* inm_dp; // Indirect pointer to a block of direct pointer Phase 2
 
-    char type; // "D" for directory or "F" for file
-
-    std::ofstream ifile; // All inodes must be stored in the "ifile"
+    mode_t m_type;  // Type of an Inode. Either a regular file (S_IFREG) or directory (S_IFDIR)
+    time_t last_modified;   // Holds the last modified time
 
     public:
-        // Create a new inode with the passed metadata and allocate the inode in the ifile
-        void Inode_Create(std::string filename, std::string permission, u_int filesize, u_int inum, char type,
-                          u_int* dp_1, u_int* dp_2, u_int* dp3, u_int* dp4, u_int* indp);
+        // A Constructor for inode with the passed metadata and allocate the inode in the ifile
+        void set_inode(u_int filesize, u_int inum, time_t cur_time, mode_t type);
+
         // Read an inode and returns the pointer of the inode
-        Inode* Inode_read(u_int inum, u_int offset);
-        // When a file gets updated, update the inode and place it in the new location
-        void Inode_update(Inode* inode);
+        Inode* get_Inode(u_int inum, u_int offset);
+
+        // Getter functinos for inode
+        u_int get_filename(Inode* inode) { return inode->m_filename; }
 }
 
 #endif

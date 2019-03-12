@@ -28,6 +28,10 @@ int main (int argc, char* argv[])
     }
 
     std::string file = argv[1];
+    int size;
+    Inode* root;
+    Inode* ifile;
+    Inode* inode;
 
     return 0;
 }
