@@ -1,7 +1,7 @@
 /*
  *  Filename: directory.h
  *  Course: CSs 552 Advanced Operating Systems
- *  Last modified: 2/24/2019
+ *  Last modified: 3/13/2019
  *  Author: Terrence Lim
  *  Summary: 
  */
@@ -12,7 +12,17 @@
 #include <map>
 #include <string>
 #include <fstream>
+
 #include <stat.h>
+
+#include "inode.h"
+#include "file.h"
+
+// Use below fstreams globally to open files within the functions,
+// for example, ofs.open(".ifile", std::ios::binary | std::ios::out | std::ios::app); or
+// ifs.open(".ifile", std::ifstream::in);
+std::ofstream ofs;
+std::ifstream ifs;
 
 class Directory
 {
@@ -20,6 +30,7 @@ class Directory
     std::ofstream directory; // A directory file to hold the "dir" map
 
     public:
+        void Directory_initializatio();
         void Directory_create();
         void Directory_read();
         void Directory_write();

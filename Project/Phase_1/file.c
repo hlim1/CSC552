@@ -1,27 +1,24 @@
 /*
- *  Filename: file.c
+ *  Filename: file.cpp
  *  Course: CSs 552 Advanced Operating Systems
- *  Last modified: 3/1/2019
+ *  Last modified: 3/13/2019
  *  Author: Terrence Lim
  *  Summary: The file layer is responsible for implementing the file abstraction. A file is represented by
  *  an inode containing the metadata for the file, including the file type (e.g. file or
  *  directory), size, and the flash addresses of the file's blocks.
  */
 
-#include <fstream>
+// Class header files list under here:
+#include "flash.h"
+#include "file.h"
+#include "inode.h"
 
-#include <time.h>
-
-#include <flash.h>
-#include <file.h>
-#include <inode.h>
-
-void File_Create (Inode inode, u_int inum, int type)
+void File_Create (Inode inode, char* file, u_int inum, u_int filesize, int mode, int type)
 {
     time_t cur_time;
     time(&cur_time);
 
-    inode.set_inode(0, inum, cur_time, type)
+    inode.Inode_Initialization(file, inum, cur_time, filesize, mode, type)
 }
 
 void File_Write(u_int inum, u_int offset, u_int length, u_int buffer)

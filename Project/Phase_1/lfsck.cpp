@@ -1,7 +1,7 @@
 /*
  *  Filename: lfsck.cpp
  *  Course: CSs 552 Advanced Operating Systems
- *  Last modified: 2/24/2019
+ *  Last modified: 3/13/2019
  *  Author: Terrence Lim
  *  Summary: lfsck receives a virtual flash file name as a command line
  *  and checks LFS for a consistency. lfsck will check
@@ -12,12 +12,14 @@
  *  then processes JSON and checks for the consistency
  */
 
+// C++ std. libraries list here:
 #include <iostream>
 #include <string>
 
-#include <ionde.h>
-#include <file.h>
-#include <directory.h>
+// Class header files list under here:
+#include "ionde.h"
+#include "file.h"
+#include "directory.h"
 
 int main (int argc, char* argv[])
 {
