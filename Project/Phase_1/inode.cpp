@@ -15,7 +15,7 @@
  * last modified time (which is the creation time at the initialization time), 4 direct pointers,
  * and 1 indirect pointer
  */
-void Inode::Inode_Initialization(char* file, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type)
+void Inode::Inode_Initialization(std::string file, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type)
 {
     m_file     = file;
     m_filesize = filesize;

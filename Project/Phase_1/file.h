@@ -24,6 +24,6 @@ class File
         int File_Write(u_int inum, u_int offset, u_int length, u_int buffer);
         int File_Read(u_int inum, u_int offset, u_int length, u_int buffer);
         int File_Free(u_int inum);
-}
+};
 
 #endif

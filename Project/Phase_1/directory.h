@@ -24,6 +24,12 @@
 std::ofstream ofs;
 std::ifstream ifs;
 
+typedef struct DirMap
+{
+    std::string name;
+    u_int inum;
+};
+
 class Directory
 {
     std::map<std::string, u_int> dir; // A map of <name, inum>
@@ -36,10 +42,10 @@ class Directory
         void Directory_write();
         void Directory_Free();
 
-        void Driectory_file_create(const char* path, mode_t mode, uid_t owner, gid_t group);
-        void Driectory_file_write(const char* path, mode_t mode, uid_t owner, gid_t group);
-        void Driectory_file_read(const char* path, mode_t mode, uid_t owner, gid_t group);
-        void Driectory_file_free(const char* path, mode_t mode, uid_t owner, gid_t group);
-}
+        int Driectory_file_create(const char* path, char* file, u_int filesize, mode_t mode, mode_t type, u_int inum);
+        int Driectory_file_write(const char* path, mode_t mode, uid_t owner, gid_t group);
+        int Driectory_file_read(const char* path, mode_t mode, uid_t owner, gid_t group);
+        int Driectory_file_free(const char* path, mode_t mode, uid_t owner, gid_t group);
+};
 
 #endif

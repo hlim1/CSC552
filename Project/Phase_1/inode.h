@@ -30,10 +30,10 @@
 
 class Inode
 {
-    char*  m_file;    // File name
-    mode_t m_mode; // Mode (or permission) of a file or directory
-    uid_t  m_owner; // Set the defualt to the current user id
-    gid_t  m_group; // Set the default to same as the owner's username
+    std::string  m_file;    // File name
+    mode_t m_mode;    // Mode (or permission) of a file or directory
+    uid_t  m_owner;   // Set the defualt to the current user id
+    gid_t  m_group;   // Set the default to same as the owner's username
 
     u_int  m_filesize;
     u_int  m_inum;
@@ -46,7 +46,7 @@ class Inode
 
     public:
         // A Constructor for inode with the passed metadata and allocate the inode in the ifile
-        void Inode_Initialization(char* file, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type);
+        void Inode_Initialization(std::string file, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type);
 
         // Update inode direct pointers using the log address
         void Update_Direct_Ptr (u_int inum, LogAddress logAddr);
@@ -56,6 +56,6 @@ class Inode
 
         // Getter functinos for inode
         u_int Get_Filename(Inode* inode) { return inode->m_filename; }
-}
+};
 
 #endif
