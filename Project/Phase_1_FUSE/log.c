@@ -2,6 +2,7 @@
 // #include "directory.h"
 // #include "file.h"
 
+// Global Definitions
 SuperBlock superBlock;
 
 SegUsgTbl segUsgTbl;
@@ -65,16 +66,12 @@ int Log_Create(){
 
 	Flash flash = Flash_Open(superBlock.fileName, flags, &get_num_erase_blocks);
 
-	
-
 	// TODO: Create an empty filesystem which contains only the root directory and the
 	// '.', '..', and '.ifile' entries.
 
 	// directory.create();	//EDIT
 
 	// TODO: Initialize the SuperBlock with segment usage table and checkpoint regions
-
-	// checkpoint regions
 
 	// TODO: Write the superblock segment in the first segment of flash
 	//  and segment summary blocks for each of the segment into the flash memory 

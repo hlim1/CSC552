@@ -159,7 +159,9 @@ extern SegUsgTbl segUsgTbl;
 extern u_int last_CR_index;
 
 typedef struct CR {
-	// IMaps* imaps;	// The collection of imaps is stored in the file called .ifile in the root dir
+	// iMap *imaps;	// The collection of imaps is stored in the file called .ifile in the root dir
+
+	// inode ifile_inode;	//EDIT: the inode of the ifile 
 
 	u_int segUsgTblAddress;	// the address of segment usage table
 	time_t write_time;	// time of creating the checkpoint 
