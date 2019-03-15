@@ -16,6 +16,10 @@ void File_Create (Inode inode, std::string file, u_int inum, u_int filesize, int
     time(&cur_time);
 
     inode.Inode_Initialization(file, inum, cur_time, filesize, mode, type);
+
+    std::ofstream ofs;
+    ofs.open(file, std::ios::binary | std::ios::out | std::ios::app);
+    ofs.close();
 }
 
 void File_Write(u_int inum, u_int offset, u_int length, u_int buffer)

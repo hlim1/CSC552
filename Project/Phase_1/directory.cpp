@@ -9,6 +9,7 @@
 #include <assert.h>
 #include "directory.h"
 
+
 void Directory::Directory_initialization()
 {
     Inode inode;
@@ -50,13 +51,8 @@ void Directory::Directory_initialization()
     dirMap[2].name = ".ifile";
     dirMap[2].inum = inum;
 
-    ofs.open(".", std::ios::binary | std::ios::out | std::ios::app);
-    ofs.close();
-    ofs.open("..", std::ios::binary | std::ios::out | std::ios::app);
-    ofs.close();
-
-    // 3. Add the inode of root, "." and ".." in the .ifile
-    ofs.open(".file", std::ios::binary | std::ios::out | std::ios::app);
+    // 3. Write the inode of root, "." and ".." to the .ifile
+    ofs.open(".ifile", std::ios::binary | std::ios::out | std::ios::app);
     Inode fInode[2];
     inum = 3;
     for (int i = 0; i < 2; i++)
@@ -85,11 +81,17 @@ void Directory::Directory_initialization()
 int Directory::Directory_file_create (const char* path, std::string file, u_int filesize, mode_t mode, mode_t type, u_int inum)
 {
     Inode inode;
-    File dfile;
-    dfile.File_Create(inode, file, inum, filesize, mode, type);
+    File file;
+    // Create a file. If successful, inode should be initialized with empty direct pointers
+    file.File_Create(inode, file, inum, filesize, mode, type);
 
     // Store generated inodes in memory ifile
     ifile.push_back(inode);
 
     return 0;
+}
+
+int Directory_file_write(const char* path, std::string file, u_int inum)
+{
+
 }

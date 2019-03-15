@@ -25,6 +25,7 @@
 class File
 {
     public:
+        File() {};
         int File_Create(Inode inode, std::string file, u_int inum, u_int filesize, int mode, int type);
         int File_Write(u_int inum, u_int offset, u_int length, u_int buffer);
         int File_Read(u_int inum, u_int offset, u_int length, u_int buffer);

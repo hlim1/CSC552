@@ -38,6 +38,7 @@ class Directory
     std::list<Inode> ifile;
 
     public:
+        Directory() {};
         void Directory_initialization();
         void Directory_create();
         void Directory_read();
@@ -45,7 +46,7 @@ class Directory
         void Directory_Free();
 
         int Directory_file_create(const char* path, std::string file, u_int filesize, mode_t mode, mode_t type, u_int inum);
-        int Directory_file_write(const char* path, mode_t mode, uid_t owner, gid_t group);
+        int Directory_file_write(const char* path, std::string file, u_int inum);
         int Directory_file_read(const char* path, mode_t mode, uid_t owner, gid_t group);
         int Directory_file_free(const char* path, mode_t mode, uid_t owner, gid_t group);
 };

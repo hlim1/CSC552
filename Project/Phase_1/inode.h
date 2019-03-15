@@ -27,7 +27,7 @@
 #include <unistd.h>
 
 // Class header files list under here:
-#include "log.h"
+// #include "log.h"
 
 class Inode
 {
@@ -46,11 +46,12 @@ class Inode
     time_t last_modified;   // Holds the last modified time
 
     public:
+        Inode() {};
         // A Constructor for inode with the passed metadata and allocate the inode in the ifile
         void Inode_Initialization(std::string file, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type);
 
         // Update inode direct pointers using the log address
-        void Update_Direct_Ptr (u_int inum, LogAddress logAddr);
+        // void Update_Direct_Ptr (u_int inum, LogAddress logAddr);
 
         // Read an inode and returns the pointer of the inode
         int Inode_getter(u_int inum, Inode found_inode, std::list<Inode> ifile);
