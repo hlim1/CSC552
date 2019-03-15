@@ -8,17 +8,14 @@
  *  directory), size, and the flash addresses of the file's blocks.
  */
 
-// Class header files list under here:
-#include "flash.h"
 #include "file.h"
-#include "inode.h"
 
-void File_Create (Inode inode, char* file, u_int inum, u_int filesize, int mode, int type)
+void File_Create (Inode inode, std::string file, u_int inum, u_int filesize, int mode, int type)
 {
     time_t cur_time;
     time(&cur_time);
 
-    inode.Inode_Initialization(file, inum, cur_time, filesize, mode, type)
+    inode.Inode_Initialization(file, inum, cur_time, filesize, mode, type);
 }
 
 void File_Write(u_int inum, u_int offset, u_int length, u_int buffer)

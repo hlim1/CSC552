@@ -19,6 +19,7 @@
 // C++ std. libraries list here:
 #include <string>
 #include <fstream>
+#include <list>
 
 // C std. libraries list under here:
 #include <time.h>
@@ -26,7 +27,7 @@
 #include <unistd.h>
 
 // Class header files list under here:
-#include "flash.h"
+#include "log.h"
 
 class Inode
 {
@@ -52,10 +53,7 @@ class Inode
         void Update_Direct_Ptr (u_int inum, LogAddress logAddr);
 
         // Read an inode and returns the pointer of the inode
-        Inode* Get_Inode(u_int inum, u_int offset);
-
-        // Getter functinos for inode
-        u_int Get_Filename(Inode* inode) { return inode->m_filename; }
-};
+        int Inode_getter(u_int inum, Inode found_inode, std::list<Inode> ifile);
+} inode;
 
 #endif

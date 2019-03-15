@@ -10,12 +10,13 @@
 #define DIRECTORY_H
 
 #include <map>
+#include <list>
 #include <string>
 #include <fstream>
+#include <iostream>
 
-#include <stat.h>
+#include <sys/stat.h>
 
-#include "inode.h"
 #include "file.h"
 
 // Use below fstreams globally to open files within the functions,
@@ -28,24 +29,25 @@ typedef struct DirMap
 {
     std::string name;
     u_int inum;
-};
+} DirMap;
 
 class Directory
 {
     std::map<std::string, u_int> dir; // A map of <name, inum>
     std::ofstream directory; // A directory file to hold the "dir" map
+    std::list<Inode> ifile;
 
     public:
-        void Directory_initializatio();
+        void Directory_initialization();
         void Directory_create();
         void Directory_read();
         void Directory_write();
         void Directory_Free();
 
-        int Driectory_file_create(const char* path, char* file, u_int filesize, mode_t mode, mode_t type, u_int inum);
-        int Driectory_file_write(const char* path, mode_t mode, uid_t owner, gid_t group);
-        int Driectory_file_read(const char* path, mode_t mode, uid_t owner, gid_t group);
-        int Driectory_file_free(const char* path, mode_t mode, uid_t owner, gid_t group);
+        int Directory_file_create(const char* path, std::string file, u_int filesize, mode_t mode, mode_t type, u_int inum);
+        int Directory_file_write(const char* path, mode_t mode, uid_t owner, gid_t group);
+        int Directory_file_read(const char* path, mode_t mode, uid_t owner, gid_t group);
+        int Directory_file_free(const char* path, mode_t mode, uid_t owner, gid_t group);
 };
 
 #endif

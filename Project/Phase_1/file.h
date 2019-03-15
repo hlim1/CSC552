@@ -13,14 +13,19 @@
 
 // C++ std. libraries list here:
 #include <fstream>
+#include <string>
 
 // C std. libraries list under here:
 #include <time.h>
 
+// Class header files list under here:
+#include "flash.h"
+#include "inode.h"
+
 class File
 {
     public:
-        int File_Create(Inode inode, char* file, u_int inum, u_int filesize, int mode, int type);
+        int File_Create(Inode inode, std::string file, u_int inum, u_int filesize, int mode, int type);
         int File_Write(u_int inum, u_int offset, u_int length, u_int buffer);
         int File_Read(u_int inum, u_int offset, u_int length, u_int buffer);
         int File_Free(u_int inum);

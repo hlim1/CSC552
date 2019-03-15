@@ -6,6 +6,8 @@
  *  Summary: 
  */
 
+#include <assert.h>
+
 #include "inode.h"
 
 /*
@@ -21,7 +23,7 @@ void Inode::Inode_Initialization(std::string file, u_int filesize, u_int inum, t
     m_filesize = filesize;
     m_inum     = inum;
     m_owner    = getuid();
-    m_gorup    = getgid()
+    m_group    = getgid();
 
     // Inode gets created before the actual file, thus initialize the direct pointers to null at initialization stage.
     // Then, set them to the actual blocks when writing to the files
@@ -34,14 +36,21 @@ void Inode::Inode_Initialization(std::string file, u_int filesize, u_int inum, t
 }
 
 /*
- * get_Inode()
+ * Inode_getter()
  * With passed inum and the offset of a target inode, search through the ifile then
  * assign the target_inode pointer to the inode location, and return true, else return false
  */
-bool Inode::Get_Inode(Inode *target_inode, u_int inum, u_int offset)
+int Inode::Inode_getter(u_int inum, Inode found_inode, std::list<Inode> ifile)
 {
-    // Open ifile
-    // Read in the content of the ifile, which is an array of inode objects
-    // Directly access to the file location of an inode (if exist)
-    // Assign the target_inode, then return true
+    assert(!ifile.empty());
+    Inode inode;
+    for (std::list<Inode>::iterator iter = ifile.begin(); iter != ifile.end(); iter++)
+    {
+        if (iter->m_inum == inum)
+        {
+            found_inode = *iter;
+            return 0;
+        }
+    }
+    return 1;
 }
