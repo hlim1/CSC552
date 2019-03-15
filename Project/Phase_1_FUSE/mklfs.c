@@ -2,12 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <string.h>
+#include <iostream>
+
+using namespace std;
 
 #include "log.h"
 #include "flash.h"
-
-// Access this from the log.h file
-extern superBlock;
 
 // mklfs creates and formats a flash for LFS. It uses Flash_Create to create a flash memory,
 // then initializes all the on-flash data structures so that the LFS process can access it
@@ -59,8 +60,6 @@ int main(int argc, char *argv[]){
 				break;
 
 			case 'l':
-
-
 				superBlock.segment_size = atoi(optarg);
 				break;
 
@@ -81,14 +80,21 @@ int main(int argc, char *argv[]){
 
 	// check if the segment size is the multiple of flash erase block size 
 	if((superBlock.segment_size*superBlock.block_size)%FLASH_SECTORS_PER_BLOCK != 0){
-		printf("segment size must be a multiple of flash erase block size");
+		printf("segment size must be a multiple of flash erase block size\n");
 		exit(EXIT_FAILURE);
 	}
 
 	// This is the filename of the virtual flash file
-	superBlock.fileName = argv[argc - 1];
+	// superBlock.fileName = argv[argc - 1];
+	strcpy(superBlock.fileName, argv[argc - 1]);
 
-	return Log_create();
+	cout << "block: " << superBlock.block_size<<endl;
+    cout << "segment: " << superBlock.segment_size<<endl;
+    cout << "segments: " << superBlock.num_segments<<endl;
+    cout << "wearlimit: " << superBlock.wearLimit<<endl;
+    cout << superBlock.fileName << endl;
+    
+	return Log_Create();
 
 }
 
