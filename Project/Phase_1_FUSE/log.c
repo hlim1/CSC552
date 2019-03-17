@@ -51,6 +51,10 @@ char mountpoint[50]; // directory on which the LFS filesystem should be mounted
 // handle for the flash memory
 Flash flash;
 
+u_int num_bytes_in_segment;
+u_int num_sectors_in_segment;
+u_int num_bytes_in_block;
+
 // This function initializes the log structure and is called by mklfs
 // Returns 0 on success, 1 otherwise
 
@@ -65,6 +69,11 @@ int Log_Create(){
  	// and each block is initially erased. 
 
 	int rc; 
+
+	// initialize these values
+	num_bytes_in_block = FLASH_SECTOR_SIZE * superBlock.block_size;
+	num_bytes_in_segment = num_bytes_in_block * superBlock.segment_size;
+	num_sectors_in_segment = superBlock.segment_size * superBlock.block_size;
 
 	int num_erase_blocks = superBlock.block_size * 
 		superBlock.segment_size * superBlock.num_segments / FLASH_SECTORS_PER_BLOCK;
@@ -170,7 +179,7 @@ int Log_Read(LogAddress logAddress, u_int length, void *buffer){
 		// Use a round robin strategy to replace an existing segment
 		// Later we can use other strategies such as replacing the least used segment in the cache
 
-		int cacheIndexToLoad;
+		int cacheIndexToLoad = lastLoadedCacheIndex + 1;
 
 		if(lastLoadedCacheIndex == -1){
 			cacheIndexToLoad = 1;
@@ -182,6 +191,8 @@ int Log_Read(LogAddress logAddress, u_int length, void *buffer){
 		// Assumption is that the memory for all the segment cache is initialized in the beginning
 		Segment *segment = &segmentCache[cacheIndexToLoad]
 		loadSegment(this_seg, segment);
+
+		lastLoadedCacheIndex = cacheIndexToLoad;
 
 		// retrieve the length bytes from the address
 		// and place into the buffer
@@ -303,17 +314,60 @@ int readFromSegment(Segment *segment, LogAddress logAddress, u_int length, void 
  * Log_Write writes "length" bytes from "buffer" into the log.
  * It updates the "logAddress" with the log segment and block number 
  * where the bytes were written.
- * TODO: What is the purpose of inum and block in this function
+ * Updates the segment summary information with the inum of the file 
+ * and the block offset of the file if the block is of type file data
  *
  *********************************************************************
  */
 
 int Log_Write(u_int inum, u_int block, u_int length, void *buffer, LogAddress *logAddress){
 
-	// check if the tail segment gets full with the writing of these bytes
- 	// write the given bytes to the log
+	// check if the tail segment gets full when writing length bytes
+	// write the given bytes to the log
 	// when the tail segment is full, write the segment to flash
 	// and initialize new tail segment
+
+	// compute the number of blocks needed by the write
+	int num_blocks = ceil(length / (FLASH_SECTOR_SIZE * superBlock.block_size));
+
+	if(numUsedBlocksInTail + num_blocks >= superBlock.segment_size){
+		// the bytes dont fit in the tail segment
+
+		// write the blocks that fit to the tail segment
+		// write the tail segment to flash
+
+		// initialize new tail segment
+		// write the remaining blocks to the new segment
+		//  update num used blocks in the tail
+
+	} else {
+	
+		// write the blocks to the tail segment
+		writeToTail(inum, block, length, buffer, logAddress);
+		// update num used blocks in tail
+		numUsedBlocksInTail += num_blocks;
+	}
+
+}
+
+// Writes length block in the tail segment and updates the segment summary for the blocks
+// involved
+int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress *logAddress){
+
+	//writes length block in the tail segment
+	memcpy(((char*)segmentCache[tailSegIndex].seg_bytes) + (numUsedBlocksInTail*num_bytes_in_block), 
+		buffer, length);
+
+	// update the logAddress with the address where the memory was written 
+	Segment tailSegment = segmentCache[tailSegIndex];
+	logAddress->segment = tailSegment.segSummary.this_segment;
+	logAddress->block = numUsedBlocksInTail;
+
+	//update the segment summary for the blocks 
+
+	// get the starting and ending block of the log
+	tailSegment.segSummary.blockInfos[num].inum = inum;
+	tailSegment.segSummary.blockInfos[num].block = block;
 
 }
 
@@ -352,6 +406,7 @@ int Log_Open(){
 
 	int rc = 0;
 
+
 	allocateSegmentCache();
 
 	rc = load_checkpoint();
@@ -359,6 +414,17 @@ int Log_Open(){
 		cout << "Could not load checkpoint from flash" << endl;
 		return rc;
 	}
+
+	// The tail segment is 1 plus the last segment written in the latest checkpoint
+
+	loadTailSegmentinCache();
+	tailSegIndex = 0;
+	numUsedBlocksInTail = 0;
+
+	// initialize these values
+	num_bytes_in_block = FLASH_SECTOR_SIZE * superBlock.block_size;
+	num_bytes_in_segment = num_bytes_in_block * superBlock.segment_size;
+	num_sectors_in_segment = superBlock.segment_size * superBlock.block_size;
 
 	return rc;
 }
