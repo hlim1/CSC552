@@ -162,6 +162,7 @@ typedef struct CR {
 	// iMap *imaps;	// The collection of imaps is stored in the file called .ifile in the root dir
 
 	// inode ifile_inode;	//EDIT: the inode of the ifile 
+	// NOTE: The ifile also needs to be written during checkpointing
 
 	u_int segUsgTblAddress;	// the address of segment usage table
 	time_t write_time;	// time of creating the checkpoint 
