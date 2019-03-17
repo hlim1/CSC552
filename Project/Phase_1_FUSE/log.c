@@ -17,7 +17,7 @@ u_int last_CR_index = 0;
 CR cr_array[2];
 
 // The address of the tail segment
-u_int tailSegAddr;
+// u_int tailSegAddr;
 
 // This tracks the number of blocks that are in use in the tail segment (in memory)
 // When all the blocks in the tail segment are used, the segment is written at once
@@ -248,16 +248,32 @@ int loadSegmentSummary(Segment* segment){
 int allocateSegmentCache() {
 	int rc;
 
-	segmentCache = (Segment*) malloc(NUM_SEGS_IN_CACHE * sizeof(Segment));
+	// segmentCache = (Segment*) malloc(NUM_SEGS_IN_CACHE * sizeof(Segment));
+	segmentCache = (Segment*) calloc(NUM_SEGS_IN_CACHE, sizeof(Segment));
+	if(segmentCache == NULL){
+		cout << "Memory allocation for segment cache failed" << endl;
+		exit(1);
+	}
 
 	// for each segment in the cache, allocate memory for each segment
 	for(int i=0; i<NUM_SEGS_IN_CACHE; i++){
-		segmentCache[i].seg_bytes = malloc(superBlock.segment_size * superBlock.block_size
+		// segmentCache[i].seg_bytes = malloc(superBlock.segment_size * superBlock.block_size
+			// * FLASH_SECTOR_SIZE);
+		segmentCache[i].seg_bytes = calloc(1, superBlock.segment_size * superBlock.block_size
 			* FLASH_SECTOR_SIZE);
+		if(segmentCache[i].seg_bytes == NULL){
+			cout << "Memory allocation for segment cache failed" << endl;
+			exit(1);
+		}
 
 		SegSummary thisSegSummary = segmentCache[i].segSummary;
 
-		thisSegSummary.blockInfos = (BlockInfo*) malloc(superBlock.segment_size * sizeof(BlockInfo));
+		// thisSegSummary.blockInfos = (BlockInfo*) malloc(superBlock.segment_size * sizeof(BlockInfo));
+		thisSegSummary.blockInfos = (BlockInfo*) calloc(superBlock.segment_size, sizeof(BlockInfo));
+		if(thisSegSummary.blockInfos == NULL){
+			cout << "Memory allocation for segment cache failed" << endl;
+			exit(1);
+		}
 
 	}
 
@@ -315,7 +331,7 @@ int readFromSegment(Segment *segment, LogAddress logAddress, u_int length, void 
  * It updates the "logAddress" with the log segment and block number 
  * where the bytes were written.
  * Updates the segment summary information with the inum of the file 
- * and the block offset of the file if the block is of type file data
+ * and the block offset of the file (if the block is of type file data)
  *
  *********************************************************************
  */
@@ -335,10 +351,33 @@ int Log_Write(u_int inum, u_int block, u_int length, void *buffer, LogAddress *l
 
 		// write the blocks that fit to the tail segment
 		// write the tail segment to flash
+		// update the next segment field in the tail segment's summary with the new segment's address
 
 		// initialize new tail segment
 		// write the remaining blocks to the new segment
 		//  update num used blocks in the tail
+
+		// write the blocks that fit to the tail segment
+		int num_fit_blocks = superBlock.segment_size - numUsedBlocksInTail;
+
+		u_int fit_length = (u_int) num_fit_blocks * num_bytes_in_block;
+		writeToTail(inum, block, fit_length, buffer, logAddress);
+
+		// write the tail segment to flash
+		// update the next segment field in the tail segment's summary
+		// initialize new tail segment
+		// set num used blocks in the tail to 0
+		writeTailSegToFlash();
+
+		// write the remaining blocks to the new tail segment
+		LogAddress new_logAddress; 
+		int remaining_blocks = num_blocks - num_fit_blocks;
+		u_int rem_length = (u_int) remaining_blocks * num_bytes_in_block;
+		// TODO: When the write spans multiple segments, how do we return the new segment's address
+		// in the logAddress
+		writeToTail(inum, block, rem_length, (char*)buffer + fit_length, &new_logAddress);
+		//  update num used blocks in the tail
+		numUsedBlocksInTail += remaining_blocks;
 
 	} else {
 	
@@ -348,10 +387,63 @@ int Log_Write(u_int inum, u_int block, u_int length, void *buffer, LogAddress *l
 		numUsedBlocksInTail += num_blocks;
 	}
 
+	return 0;
+
 }
+
+// update the next segment field in the tail segment's summary
+// write the tail segment to flash
+// initialize new tail segment
+// set num used blocks in the tail to 0
+int writeTailSegToFlash(){
+
+	// update the next segment field in the tail segment's summary
+	Segment tailSegment = segmentCache[tailSegIndex];
+	// set the next segment address to 1 plus the current segment address
+	
+	u_int next_segment = tailSegment.segSummary.this_segment + 1;
+	tailSegment.segSummary.next = next_segment;
+
+	// TODO: Set the next segment address to the address returned by the segment cleaner
+	// It is the segment cleaner's job to provide the next available clean segment
+	// tailSegment.segSummary.next = segmentCleaner.getNext(tailSegment.segSummary.this_segment);
+	
+	u_int this_segment = tailSegment.segSummary.this_segment;
+
+	// write the segment summary to the first block of segment or as needed by the size of 
+	// segment summary
+	SegSummary thisSegSummary = tailSegment.segSummary;
+
+	memcpy(tailSegment.seg_bytes, &thisSegSummary, sizeof(SegSummary));
+	memcpy(((char*)tailSegment.seg_bytes) + sizeof(SegSummary), thisSegSummary.blockInfos, 
+		sizeof(BlockInfo) * superBlock.segment_size);
+
+	// write the tail segment to Flash
+	int rc = Flash_Write(flash, this_segment * num_sectors_in_segment, num_sectors_in_segment,
+		tailSegment.seg_bytes);
+	if(rc != 0){
+		cout << "Error writing tail segment " << this_segment << " to flash"<<endl;
+		return rc; 
+	}
+
+	// initialize new tail segment
+	memset(tailSegment.seg_bytes, 0, num_bytes_in_segment);
+	memset(thisSegSummary.blockInfos, 0, superBlock.segment_size * sizeof(BlockInfo));
+	thisSegSummary.this_segment = next_segment;
+	thisSegSummary.next = thisSegSummary.this_segment + 1;
+
+	// set num used blocks in the tail to 0
+	numUsedBlocksInTail = 0;
+
+	
+	return 0;
+
+}
+
 
 // Writes length block in the tail segment and updates the segment summary for the blocks
 // involved
+// Return 0 on success
 int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress *logAddress){
 
 	//writes length block in the tail segment
@@ -365,9 +457,22 @@ int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress 
 
 	//update the segment summary for the blocks 
 
+	// compute the number of blocks needed by the write
+	int num_blocks = ceil(length / num_bytes_in_block);
+
 	// get the starting and ending block of the log
-	tailSegment.segSummary.blockInfos[num].inum = inum;
-	tailSegment.segSummary.blockInfos[num].block = block;
+	int start_block = numUsedBlocksInTail;
+	int end_block = numUsedBlocksInTail + num_blocks - 1;
+
+	// TODO: Check if inum is valid; If it is valid then this write is part of a file data write
+	// Set the type of the block (in segment summary) to file data type if the inum is valid
+	// if(inum != -1)
+
+	for(int i=start_block; i<=end_block; i++){
+		tailSegment.segSummary.blockInfos[i].inum = inum;
+		tailSegment.segSummary.blockInfos[i].block_offset = block;
+		tailSegment.segSummary.blockInfos[i].type = BLKTYPE_FILE;
+	}
 
 }
 
@@ -439,6 +544,17 @@ int Log_Close(){
 		cout << "Could not write checkpoint to flash" << endl;
 		return rc;
 	}
+
+	// free memory
+	
+	// for each segment in the cache, deallocate memory
+	for(int i=0; i<NUM_SEGS_IN_CACHE; i++){
+		free(segmentCache[i].seg_bytes);
+		SegSummary thisSegSummary = segmentCache[i].segSummary;
+		free(thisSegSummary.blockInfos);
+	}
+
+	free(segmentCache);
 
 	return rc;
 }
