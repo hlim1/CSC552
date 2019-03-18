@@ -9,12 +9,11 @@
 #include <assert.h>
 #include "directory.h"
 
-
 void Directory::Directory_initialization()
 {
     Inode inode;
     int status = 0; // 0 is success and > 0 is fail
-    DirMap dirMap[3];
+    DirMap dirMap[3]; // This holds the <name, inum> pair of file information of current directory
 
     u_int inum = 2; // The root directory's inode number is 2
 
@@ -57,7 +56,7 @@ void Directory::Directory_initialization()
     inum = 3;
     for (int i = 0; i < 2; i++)
     {
-        status = inode.Inode_getter(inum, fInode[i], ifile);
+        status = inode.Inode_getter_for_list(inum, fInode[i], ifile);
         if (status == 0)
         {
             ofs.write((char*)&fInode[i], sizeof(fInode[i]));
@@ -78,20 +77,44 @@ void Directory::Directory_initialization()
     ofs.close();
 }
 
-int Directory::Directory_file_create (const char* path, std::string file, u_int filesize, mode_t mode, mode_t type, u_int inum)
+int Directory::Directory_file_create (const char* path, std::string filename, u_int filesize, mode_t mode, mode_t type, u_int inum)
 {
-    Inode inode;
+    Inode inode; // Inode for the new file
     File file;
     // Create a file. If successful, inode should be initialized with empty direct pointers
-    file.File_Create(inode, file, inum, filesize, mode, type);
+    file.File_Create(inode, path, filename, inum, filesize, mode, type);
 
-    // Store generated inodes in memory ifile
-    ifile.push_back(inode);
+    if (filename == "/")
+        RootInode = inode;
+    else
+    {
+        // Store generated inodes in memory ifile
+        ifile.push_back(inode);
+    }
 
     return 0;
 }
 
-int Directory_file_write(const char* path, std::string file, u_int inum)
+void Directory_read(u_int inum, void* buffer, u_int offset)
 {
 
+}
+
+/*
+ *  Direct_file_Write()
+ *  Given the inum of inode, it calls File_Write to initialize the inode's direct/indirect pointers.
+ */
+int Directory::Directory_file_write(u_int inum, void* buffer, u_int offset, u_int length)
+{
+    int status;
+    File file;
+    status = file.File_Write(inum, offset, length, buffer);
+
+    if (status > 0)
+    {
+        std::cerr << "File write failed" << std::endl;
+        exit(1);
+    }
+    
+    return 0;
 }

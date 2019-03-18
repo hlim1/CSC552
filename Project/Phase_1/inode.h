@@ -29,6 +29,12 @@
 // Class header files list under here:
 // #include "log.h"
 
+typedef struct Direct_Block_Ptr
+{
+    u_int segment;
+    u_int block;
+} Direct_Block_Ptr;
+
 class Inode
 {
     std::string  m_file;    // File name
@@ -39,7 +45,7 @@ class Inode
     u_int  m_filesize;
     u_int  m_inum;
 
-    u_int* m_direct_pointer[4]; // 4 direct pointers to the first 4 block of the of the file
+    Direct_Block_Ptr m_direct_pointer[4]; // 4 direct pointers to the first 4 block of the of the file
     // u_int* inm_dp; // Indirect pointer to a block of direct pointer Phase 2
 
     mode_t m_type;  // Type of an Inode. Either a regular file (S_IFREG) or directory (S_IFDIR)
@@ -48,13 +54,13 @@ class Inode
     public:
         Inode() {};
         // A Constructor for inode with the passed metadata and allocate the inode in the ifile
-        void Inode_Initialization(std::string file, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type);
+        int Inode_Initialization(std::string filename, std::string path, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type);
+        int Inode_Write(Inode &found_inode, u_int size_per_block, u_int seg, u_int block_address);
+        int Inode_getter_for_list(u_int inum, Inode &found_inode, std::list<Inode> ifile);
+        int Inode_getter_for_array(u_int inum, Inode &found_inode, Inode[] ifile, int size);
+        int Inode_get_last_inum_in_ifile();
 
-        // Update inode direct pointers using the log address
-        // void Update_Direct_Ptr (u_int inum, LogAddress logAddr);
-
-        // Read an inode and returns the pointer of the inode
-        int Inode_getter(u_int inum, Inode found_inode, std::list<Inode> ifile);
+        Direct_Block_Ptr* Inode_get_block_ptr();
 } inode;
 
 #endif

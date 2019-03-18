@@ -15,6 +15,7 @@
 #include <fstream>
 #include <iostream>
 
+#include <stdlib.h>
 #include <sys/stat.h>
 
 #include "file.h"
@@ -25,6 +26,9 @@
 std::ofstream ofs;
 std::ifstream ifs;
 
+extern list<Inode> ifile;   // In memory ifile holder that can be acces across the program
+extern Inode RootInode;
+
 typedef struct DirMap
 {
     std::string name;
@@ -33,20 +37,19 @@ typedef struct DirMap
 
 class Directory
 {
-    std::map<std::string, u_int> dir; // A map of <name, inum>
     std::ofstream directory; // A directory file to hold the "dir" map
-    std::list<Inode> ifile;
+    // std::list<Inode> ifile;
 
     public:
-        Directory() {};
+        Directory() {}; // Defualt constructor
         void Directory_initialization();
         void Directory_create();
-        void Directory_read();
-        void Directory_write();
+        void Directory_read(u_int inum, void* buffer, u_int offset, u_int length);
+        void Directory_write(u_int inum, void* buffer, u_int offset, u_int length);
         void Directory_Free();
 
-        int Directory_file_create(const char* path, std::string file, u_int filesize, mode_t mode, mode_t type, u_int inum);
-        int Directory_file_write(const char* path, std::string file, u_int inum);
+        int Directory_file_create(const char* path, std::string filename, u_int filesize, mode_t mode, mode_t type, u_int inum);
+        int Directory_file_write(u_int inum, void* buffer);
         int Directory_file_read(const char* path, mode_t mode, uid_t owner, gid_t group);
         int Directory_file_free(const char* path, mode_t mode, uid_t owner, gid_t group);
 };

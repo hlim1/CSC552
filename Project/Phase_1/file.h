@@ -19,16 +19,18 @@
 #include <time.h>
 
 // Class header files list under here:
-#include "flash.h"
 #include "inode.h"
+#include "log.h"
+
+extern u_int BLOCK_SIZE;    // This block size should be available across the program. Initialization should be done in LFS.cpp
 
 class File
 {
     public:
-        File() {};
-        int File_Create(Inode inode, std::string file, u_int inum, u_int filesize, int mode, int type);
-        int File_Write(u_int inum, u_int offset, u_int length, u_int buffer);
-        int File_Read(u_int inum, u_int offset, u_int length, u_int buffer);
+        File() {};  // Default constructor
+        int File_Create(Inode inode, std::string path, std::string filename, u_int inum, u_int filesize, int mode, int type);
+        int File_Write(u_int inum, u_int offset, u_int length, void* buffer);
+        int File_Read(u_int inum, u_int offset, u_int length, void* buffer);
         int File_Free(u_int inum);
 };
 
