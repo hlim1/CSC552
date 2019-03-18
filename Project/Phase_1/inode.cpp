@@ -34,6 +34,16 @@ int Inode::Inode_Initialization(std::string filename, std::string path, u_int fi
     m_mode        = mode;
     m_type        = type;
     last_modified = cur_time;
+    last_accessed = cur_time;
+
+    return 0;
+}
+
+
+int Inode_Write(u_int index, u_int seg, u_int block_address)
+{
+    this->m_direct_pointer[index].segment = seg;
+    this->m_direct_pointer[index].block = block_address;;
 
     return 0;
 }
@@ -63,7 +73,7 @@ int Inode::Inode_getter_for_list(u_int inum, Inode &found_inode, std::list<Inode
  * With passed inum and the offset of a target inode, search through the ifile then
  * assign the target_inode pointer to the inode location, and return true, else return false
  */
-int Inode_getter_for_array(u_int inum, Inode &found_inode, Inode[] tempIfile, int size)
+int Inode::Inode_getter_for_array(u_int inum, Inode &found_inode, Inode* tempIfile, int size)
 {
     for (int i = 0; i < size; i++)
     {
@@ -76,7 +86,7 @@ int Inode_getter_for_array(u_int inum, Inode &found_inode, Inode[] tempIfile, in
     return 1;
 }
 
-int Inode_get_last_inum_in_ifile()
+int Inode::Inode_get_last_inum_in_ifile()
 {
     ifstream ifs;
     ifs.open(".ifile", std::ifstream::binary);
@@ -98,15 +108,20 @@ int Inode_get_last_inum_in_ifile()
     return 1;
 }
 
-int Inode_Write(Inode &found_inode, u_int index, u_int seg, u_int block_address)
+int Inode::Inode_get_inum()
 {
-    found_inode.m_direct_pointer[index].segment = seg;
-    found_inode.m_direct_pointer[index].block = block_address;;
-
-    return 0;
+    return this->inum;
 }
 
-Direct_Block_Ptr* Inode_get_block_ptr()
+Direct_Block_Ptr* Inode::Inode_get_block_ptr()
 {
     return this->m_direct_pointer;
+}
+
+void Inode::Inode_update_last_access()
+{
+    time_t cur_time;
+    time(&cur_time);
+
+    this->m_last_accessed = cur_time;
 }

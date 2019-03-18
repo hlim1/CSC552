@@ -85,60 +85,44 @@ int File_Write(u_int inum, u_int offset, u_int length, void* buffer)
         std::cerr << "Failed to write to inode" << std::endl;
         return 1;
     }
-    // Open .ifile and retrieve all inodes in the file, then store them
-    // temporarily into the temporary ifile for look up
-    ifstream ifs;
-    ifs.open(".ifile", std::ifstream::binary);
 
-    if (ifs)
+    Inode found_inode;
+    int index = Inode_getter_for_list(inum, found_inode, ifile);
+    if (index == 1)
     {
-        ifS.seekg(0, ifs.end);
-        int len = ifs.tellg();
-        ifs.seekg(0, ifs.beg);
-
-        int size = len/sizeof(Inode);
-
-        Inode temporary_ifile[size];
-        ifs.read((char*)&inode, len);
-
-        // Find and return the updated found_inode. If the target inode does not exist, print error and return 1.
-        // Else, the returned value is the index of target inode in the temporary_ifile array
-        Inode found_inode;
-        int index = Inode.Inode_getter_for_array(inum, found_inode, temporary_ifile, size);
-        if (index == 1)
-        {
-            std::cerr << "Inode does not exist" << std::endl;
-            return 1;
-        }
-       
-        // Below only handles direct 4 direct pointers 
-        int current_segment = logAddress.segment;
-        int current_block_addr = logAddress.block;;
-        for (int i = 0; i < 4; i++)
-        {
-            status = Inode.Inode_Write(found_inode, i, current_segment, current_block_addr);
-            if (status)
-            {
-                std::cerr << "Inode write failed" << std::endl;
-                return 1;
-            }
-            current_block_addr = current_block_addr + BLOCKSIZE;
-        }
-        temporary_ifile[index] = found_inode;
-        ifs.close();
-
-        // Overwrite the entire ifile content with updated inode(s)
-        // This, currently, is an inefficient way to update the .ifile, thus it may require improvement
-        // of using the offset of a specific inode in the .ifile to only update that line.
-        ofstream ostrm(".ifile", std::std::ios::binary | std::ios::out);
-        ostrm.write((char*)&temporary_ifile, sizeof(Inode));
-        ostrm.close();
-    }
-    else
-    {
-        std::cerr << "Failed to open .ifile" << std::endl;
+        std::cerr << "Unable to find the inode of given inum" << std::endl;
         return 1;
     }
+
+    // Setting direct pointers of a file inode
+    int current_segment = logAddress.segment;
+    int current_block_addr = logAddress.block;;
+    for (int i = 0; i < 4; i++)
+    {
+        status = found_inode.Inode_Write(i, current_segment, current_block_addr);
+        if (status)
+        {
+            std::cerr << "Inode write failed" << std::endl;
+            return 1;
+        }
+        current_block_addr = current_block_addr + BLOCKSIZE;
+    }
+
+    // Update the inode in ifile with the found_inode
+    std::list<Inode>::iterator iter;
+    int idx = 0;
+    for (iter = ifile.begin(); iter != ifile.end(); iter++)
+    {
+        if (idx == index)
+        {
+            u_int inum_chck = found_inode.Inode_get_inum();
+            if (inum == inum_chck)
+                *iter = found_inode;
+            else
+                return 1;
+        }
+    }
+
     return 0;
 }
 
@@ -163,27 +147,13 @@ int File_Write(u_int inum, u_int offset, u_int length, void* buffer)
  */
 int File_Read(u_int inum, u_int offset, u_int length, void* buffer)
 {
+    // Find the target inode from the .ifile
     Inode found_inode;
-    std::ifstream ifs;
-    ifs.open (".ifile", std::ifstream::binary);
-
-    if (ifs)
+    int index = Inode_getter_for_list(inum, found_inode, ifile);
+    if (index == 1)
     {
-        ifS.seekg(0, ifs.end);
-        int len = ifs.tellg();
-        ifs.seekg(0, ifs.beg);
-
-        int size = len/sizeof(Inode);
-
-        Inode temporary_ifile[size];
-        ifs.read((char*)&inode, len);
-
-        status = Inode.Inode_getter_for_array(inum, found_inode, temporary_ifile, size);
-        if (status)
-        {
-            std::cerr << "Inode does not exist" << std::endl;
-            return 1;
-        }
+        std::cerr << "Unable to find the inode of given inum" << std::endl;
+        return 1;
     }
 
     LogAddress logAddress;
@@ -201,7 +171,26 @@ int File_Read(u_int inum, u_int offset, u_int length, void* buffer)
             return 1;
         }
     }
-    ifs.close();
+
+
+    // Update the last access time of the file
+    found_inode.Inode_update_last_access_time();
+
+    // Update the inode in ifile with the found_inode
+    std::list<Inode>::iterator iter;
+    int idx = 0;
+    for (iter = ifile.begin(); iter != ifile.end(); iter++)
+    {
+        if (idx == index)
+        {
+            u_int inum_chck = found_inode.Inode_get_inum();
+            if (inum == inum_chck)
+                *iter = found_inode;
+            else
+                return 1;
+        }
+    }
+
     return 0;
 }
 

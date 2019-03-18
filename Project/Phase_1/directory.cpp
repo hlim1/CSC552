@@ -9,95 +9,136 @@
 #include <assert.h>
 #include "directory.h"
 
-void Directory::Directory_initialization()
+/*
+ *********************************************************************
+ * int
+ * Directory_initialization 
+ *
+ * Parameters:
+ *  None
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * Initializes the directory layer. It creates the root directory "/"
+ * and ".", "..", and ".ifile" files.
+ *
+ *********************************************************************
+ */
+int Directory::Directory_initialization()
 {
-    Inode inode;
     int status = 0; // 0 is success and > 0 is fail
-    DirMap dirMap[3]; // This holds the <name, inum> pair of file information of current directory
 
-    u_int inum = 2; // The root directory's inode number is 2
+    u_int inum = INUMOFROOTDIR;
 
-    // 1. Create a root directory ("/": Forward slash)
-    if (Directory_file_create ("/", "/", 0, S_IFDIR, S_IRWXU, inum) > 0)
+    // Create a root directory ("/": Forward slash)
+    if (Directory_create ("/", "/", S_IFDIR, S_IRWXU, inum) > 0)
     {
         std::cerr << "Root directory '/' creation failed." << std::endl;
         exit(1);
     }
 
-    // 2. Create three special files ".", "..", and ".ifile"
-    inum = 3;
-    if (Directory_file_create ("/", ".", 0, S_IFREG, S_IRUSR, inum) > 0)
-    {
-        std::cerr << "file '.' creation failed." << std::endl;
-        exit(1);
-    }
-    dirMap[0].name = ".";
-    dirMap[0].inum = inum;
-    inum = 4;
-    if (Directory_file_create ("/", "..", 0, S_IFREG, S_IRUSR, inum) > 0)
-    {
-        std::cerr << "file '..' creation failed." << std::endl;
-        exit(1);
-    }
-    dirMap[1].name = "..";
-    dirMap[1].inum = inum;
-    inum = 5;
+    // Create .ifile when initializing the directory layer
+    inum = INUMOFIFILE;
     if (Directory_file_create ("/", ".file", 0, S_IFREG, S_IRUSR, inum) > 0)
     {
         std::cerr << "file '.file' creation failed." << std::endl;
-        exit(1);
-    }
-    dirMap[2].name = ".ifile";
-    dirMap[2].inum = inum;
-
-    // 3. Write the inode of root, "." and ".." to the .ifile
-    ofs.open(".ifile", std::ios::binary | std::ios::out | std::ios::app);
-    Inode fInode[2];
-    inum = 3;
-    for (int i = 0; i < 2; i++)
-    {
-        status = inode.Inode_getter_for_list(inum, fInode[i], ifile);
-        if (status == 0)
-        {
-            ofs.write((char*)&fInode[i], sizeof(fInode[i]));
-            inum++;
-        }
-        else
-        {
-            std::cerr << "Inode not found." << std::endl;
-            exit(1);
-        }
-    }
-    ofs.close();
-
-    // 4. Add array of <name,inum> into root directory 
-    ofs.open("/", std::ios::binary | std::ios::out | std::ios::app);
-    for (int i = 0; i < 3; i++)
-        ofs.write((char*)&dirMap, sizeof(dirMap));
-    ofs.close();
-}
-
-int Directory::Directory_file_create (const char* path, std::string filename, u_int filesize, mode_t mode, mode_t type, u_int inum)
-{
-    Inode inode; // Inode for the new file
-    File file;
-    // Create a file. If successful, inode should be initialized with empty direct pointers
-    file.File_Create(inode, path, filename, inum, filesize, mode, type);
-
-    if (filename == "/")
-        RootInode = inode;
-    else
-    {
-        // Store generated inodes in memory ifile
-        ifile.push_back(inode);
+        return 1;
     }
 
     return 0;
 }
 
-void Directory_read(u_int inum, void* buffer, u_int offset)
+/*
+ *********************************************************************
+ * int
+ * Directory_create
+ *
+ * Parameters:
+ * std::string path - directory path
+ * string dirname - current directory name that needs to be created
+ * mode_t mode - mode or the permission of the file
+ * mode_t type - file or directory
+ * u_int inum - inode number of the directory
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * Creates a directory based on the passed parameters and create "."
+ * and ".." files as every directory holds both as default.
+ *
+ *********************************************************************
+ */
+int Directory_create(std::string path, std::string dirname, mode_t mode, mode_t type, u_int inum)
 {
+    Inode inode;                // Inode for the new file
+    File file;
+    DirMap cur_directory;       // "."
+    DirMap parent_directory;    // ".."
+    u_int filesize = 0;
 
+    // Create a file. If successful, inode should be initialized with empty direct pointers
+    if (file.File_Create(inode, path, dirname, inum, filesize, mode, type) > 0)
+    {
+        std::cerr << "File create failed in Directory creation" << std::endl;
+        return 1;
+    }
+
+    ifile.push_back(inode);
+
+    // Every directory has '.' and '..' files
+    inum = inum + 1;
+    if (Directory_file_create ("/", ".", 0, S_IFREG, S_IRUSR, inum) > 0)
+    {
+        std::cerr << "file '.' creation failed." << std::endl;
+        exit(1);
+    }
+    cur_directory.name = ".";
+    cur_directory.inum = inum;
+    directory.push_back(cur_directory);
+
+    inum = inum + 1;
+    if (Directory_file_create ("/", "..", 0, S_IFREG, S_IRUSR, inum) > 0)
+    {
+        std::cerr << "file '..' creation failed." << std::endl;
+        exit(1);
+    }
+    parent_directory.name = "..";
+    parent_directory.inum = inum;
+    directory.push_back(parent_directory);
+
+    return 0;
+}
+
+int Directory::Directory_file_create (std::string path, std::string filename, u_int filesize, int mode, int type, u_int inum)
+{
+    Inode inode; // Inode for the new file
+    File file;
+
+    // Create a file. If successful, inode should be initialized with empty direct pointers
+    if (file.File_Create(inode, path, filename, inum, filesize, mode, type))
+    {
+        std::cerr << "File create failed in Directory file creation" << std::endl;
+        return 1;
+    }
+
+    ifile.push_back(inode);
+
+    return 0;
+}
+
+int Directory::Directory_file_read(u_int inum, void* buffer, u_int offset, u_int length)
+{
+    File file;
+    int status = file.File_Read(inum, offset, length, buffer);
+
+    if (status > 0)
+    {
+        std::cerr < "There was an error while reading a file in Directory read" << std::endl;
+        return 1;
+    }
+
+    return 0;
 }
 
 /*
