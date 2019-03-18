@@ -215,7 +215,7 @@ typedef struct SegSummary {
 
 
 // The address of the tail segment
-extern u_int tailSegAddr;
+// extern u_int tailSegAddr;
 
 // This tracks the number of blocks that are in use in the tail segment (in memory)
 // When all the blocks in the tail segment are used, the segment is written at once
