@@ -24,6 +24,10 @@
 #define BLKTYPE_FILE 0
 #define BLKTYPE_OTHER 1 
 
+extern u_int num_bytes_in_segment;
+extern u_int num_sectors_in_segment;
+extern u_int num_bytes_in_block;
+
 typedef struct LogAddress {
 	u_int segment;	// starting offset of the segment in flash 
 	u_int block;	// offset of the block (block number) within the segment

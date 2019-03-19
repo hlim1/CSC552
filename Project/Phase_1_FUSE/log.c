@@ -448,12 +448,16 @@ int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress 
 
 	// TODO: Check if inum is valid; If it is valid then this write is part of a file data write
 	// Set the type of the block (in segment summary) to file data type if the inum is valid
-	// if(inum != -1)
+	//
+
+	if(inum == 0 && block == 0){
+		int type = BLKTYPE_OTHER;
+	}
 
 	for(int i=start_block; i<=end_block; i++){
 		tailSegment.segSummary.blockInfos[i].inum = inum;
 		tailSegment.segSummary.blockInfos[i].block_offset = block;
-		tailSegment.segSummary.blockInfos[i].type = BLKTYPE_FILE;
+		tailSegment.segSummary.blockInfos[i].type = type;
 	}
 
 }
@@ -545,9 +549,17 @@ int Log_Open(bool isFlashEmpty=false){
 	numUsedBlocksInTail = 0;
 
 	if(!isFlashEmpty){
+		int latestIndex;
 		// find the latest checkpoint
-		// get the last segment written in the checkpoint
+		if (cr_array[0].write_time > cr_array[1].write_time){
+			latestIndex = 0;
+		}	else {
+			latestIndex = 1;
+		}
 
+		// get the last segment written in the checkpoint
+		int last_seg_num = cr_array[latestIndex].lastSegmentAddress;
+		
 		// The tail segment is 1 plus the last segment written in the latest checkpoint
 		segmentCache[tailSegIndex].segSummary.this_segment = last_seg_num + 1;
 
@@ -604,20 +616,48 @@ int writeCheckpoint(){
 	// rc is the return code
 	int rc = 0;
 
-	// prepare the checkpoint and write it to flash
+	// write the current tail segment to flash
+	writeTailSegToFlash();
+
+	// prepare the checkpoint and write it to flash on the new segment
 
 	// alternate between the two checkpoints (0 and 1)
 	u_int indexToWrite = last_CR_index+1;
 	if(indexToWrite == 2){ indexToWrite = 0;}
 
 	cr_array[indexToWrite].write_time = time(0);
-	cr_array[indexToWrite].lastSegmentAddress = 
-
+	cr_array[indexToWrite].lastSegmentAddress = segmentCache[tailSegIndex].segSummary.this_segment;
 	// Setting this address to 0. When loading, treat this as an unassigned or invalid index
 	cr_array[indexToWrite].segUsgTblAddress = 0;
 
-	// write the superblock in the first segment
+	// write the checkpoint region in the tail segment 
+	size_t length = sizeof(CR);
+	// void* checkpt_bytes = malloc(length);
+	// memcpy(checkpt_bytes, &cr_array[indexToWrite], length);
 
+	LogAddress new_logAddress;
+	int num_blocks = ceil(length / (FLASH_SECTOR_SIZE * superBlock.block_size));
+	// writeToTail(0, 0, length, checkpt_bytes, &new_logAddress);
+	writeToTail(0, 0, length, &cr_array[indexToWrite], &new_logAddress);
+
+	// free (checkpt_bytes);
+
+	// update num used blocks in the tail
+	numUsedBlocksInTail += num_blocks;
+
+	// write the tail segment to the flash
+	writeTailSegToFlash();
+
+	// update the superblock's cr address with the address of the checkpoint
+	superBlock.cr_addresses[indexToWrite] = cr_array[indexToWrite].lastSegmentAddress;
+
+	// write the superblock in the first segment
+	size_t length = sizeof(SuperBlock);
+	rc = Flash_Write(flash, 0, ceil(length / FLASH_SECTOR_SIZE) , &superBlock);
+	if(rc != 0){
+		cout << "Error writing superblock to flash" << endl;
+		return rc;
+	}
 
 	last_CR_index = indexToWrite;
 
@@ -628,15 +668,59 @@ int writeCheckpoint(){
 // the structures in memory
 
 // Returns 0 on success, 1 otherwise
-int loadCheckpoint(){
+int loadCheckpoint(bool isFlashEmpty=false){
 	int rc = 0;
 
-	// open the flash file and read the contents of the superblock, and checkpoint information
+	if(!isFlashEmpty){
+	// read the contents of the superblock, and checkpoint information
 	// (which contains the inode of the ifile and the last written segment)
+		size_t length = sizeof(SuperBlock);
+		rc = Flash_Read(flash, 0, ceil(length/FLASH_SECTOR_SIZE), &superBlock);
+		if(rc != 0){
+			cout << "Error reading superblock from flash" << endl;
+			return rc;
+		}
 
-	// prepare the next segment to be the tail segment of the block (or use the remaining unused blocks
-	// of the last written segment before using the next segment)
+		if(superBlock.cr_addresses[0]!=0){
+			// load into cr_array
+			length = sizeof(CR);
+			rc = Flash_Read(flash, superBlock.cr_addresses[0]*num_sectors_in_segment, 
+				ceil(length/FLASH_SECTOR_SIZE), &cr_array[0]);
+			if(rc != 0){
+				cout << "Error reading checkpoint 0 from flash" << endl;
+				return rc;
+			}
 
+		}
+
+		if(superBlock.cr_addresses[1]!=0){
+			// load into cr_array
+			length = sizeof(CR);
+			rc = Flash_Read(flash, superBlock.cr_addresses[1]*num_sectors_in_segment, 
+				ceil(length/FLASH_SECTOR_SIZE), &cr_array[1]);
+			if(rc != 0){
+				cout << "Error reading checkpoint 1 from flash" << endl;
+				return rc;
+			}
+		}
+
+	}	else {
+		// This flash is freshly created
+		// clear the checkpoint addresses in the superblock
+		superBlock.cr_addresses[0] = 0;
+		superBlock.cr_addresses[1] = 0;
+
+		// clear the checkpoint regions
+		cr_array[0].write_time = 0;
+		cr_array[1].write_time = 0;
+
+		cr_array[0].lastSegmentAddress = 0;
+		cr_array[1].lastSegmentAddress = 0;
+
+		cr_array[0].segUsgTblAddress = 0;
+		cr_array[1].segUsgTblAddress = 0;
+
+	}
 
 	return rc;
 
