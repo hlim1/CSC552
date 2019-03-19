@@ -6,6 +6,7 @@ Spring 2019
 
 ## Team members:
 Sabin Devkota
+
 Terrence Lim
 
 The design document for the project can be found here (link to design document).
