@@ -2,9 +2,9 @@
 Advanced Operating Systems
 Spring 2019
 
-#LFS Project
+# LFS Project
 
-##Team members:
+## Team members:
 Sabin Devkota
 Terrence Lim
 
