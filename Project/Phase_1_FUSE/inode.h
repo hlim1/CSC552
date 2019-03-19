@@ -57,10 +57,9 @@ class Inode
         // A Constructor for inode with the passed metadata and allocate the inode in the ifile
         int Inode_Initialization(std::string filename, std::string path, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type);
         int Inode_Write(u_int size_per_block, u_int seg, u_int block_address);
-        int Inode_getter_for_list(u_int inum, Inode &found_inode, std::list<Inode> ifile);
-        int Inode_getter_for_array(u_int inum, Inode &found_inode, Inode* ifile, int size);
-        int Inode_get_last_inum_in_ifile();
-        int Inode_get_inum();
+        int Inode_getter(u_int inum, Inode &found_inode, std::list<Inode> ifile);
+        u_int Inode_get_last_inum_in_ifile();
+        u_int Inode_get_inum();
 
         Direct_Block_Ptr* Inode_get_block_ptr();
 

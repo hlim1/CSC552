@@ -72,23 +72,19 @@ int Directory::Directory_initialization()
 int Directory_create(std::string path, std::string dirname, mode_t mode, mode_t type, u_int inum)
 {
     Inode inode;                // Inode for the new file
-    File file;
     DirMap cur_directory;       // "."
     DirMap parent_directory;    // ".."
     u_int filesize = 0;
 
-    // Create a file. If successful, inode should be initialized with empty direct pointers
-    if (file.File_Create(inode, path, dirname, inum, filesize, mode, type) > 0)
+    if (Directory_file_create (path, dirname, filesize, mode, type, inum) > 0)
     {
-        std::cerr << "File create failed in Directory creation" << std::endl;
-        return 1;
+        std::cerr << "file '.' creation failed." << std::endl;
+        exit(1);
     }
-
-    ifile.push_back(inode);
 
     // Every directory has '.' and '..' files
     inum = inum + 1;
-    if (Directory_file_create ("/", ".", 0, S_IFREG, S_IRUSR, inum) > 0)
+    if (Directory_file_create ("/", ".", filesize, S_IFREG, S_IRUSR, inum) > 0)
     {
         std::cerr << "file '.' creation failed." << std::endl;
         exit(1);
@@ -98,7 +94,7 @@ int Directory_create(std::string path, std::string dirname, mode_t mode, mode_t 
     directory.push_back(cur_directory);
 
     inum = inum + 1;
-    if (Directory_file_create ("/", "..", 0, S_IFREG, S_IRUSR, inum) > 0)
+    if (Directory_file_create ("/", "..", filesize, S_IFREG, S_IRUSR, inum) > 0)
     {
         std::cerr << "file '..' creation failed." << std::endl;
         exit(1);
@@ -122,13 +118,48 @@ int Directory::Directory_file_create (std::string path, std::string filename, u_
         return 1;
     }
 
-    ifile.push_back(inode);
+    if (filename == ".ifile")
+        inode_of_ifile = inode;
+    else
+        ifile.push_back(inode);
 
+    return 0;
+}
+
+/*
+ *  int
+ *  Direct_file_Write
+ *  Given the inum of inode, it calls File_Write to initialize the inode's direct/indirect pointers.
+ */
+int Directory::Directory_file_write(u_int inum, void* buffer, u_int offset, u_int length)
+{
+    if (inum < 2)
+    {
+        std::cerr << "Invalid inum passed to Directory file write" << std::endl;
+        return 1;
+    }
+
+    int status;
+    File file;
+    status = file.File_Write(inum, offset, length, buffer);
+
+    if (status > 0)
+    {
+        std::cerr << "File write failed" << std::endl;
+        return 1;
+    }
+    
     return 0;
 }
 
 int Directory::Directory_file_read(u_int inum, void* buffer, u_int offset, u_int length)
 {
+    if (inum < 2)
+    {
+        std::cerr << "Invalid inum passed to Directory file read" << std::endl;
+        return 1;
+    }
+
     File file;
     int status = file.File_Read(inum, offset, length, buffer);
 
@@ -138,24 +169,5 @@ int Directory::Directory_file_read(u_int inum, void* buffer, u_int offset, u_int
         return 1;
     }
 
-    return 0;
-}
-
-/*
- *  Direct_file_Write()
- *  Given the inum of inode, it calls File_Write to initialize the inode's direct/indirect pointers.
- */
-int Directory::Directory_file_write(u_int inum, void* buffer, u_int offset, u_int length)
-{
-    int status;
-    File file;
-    status = file.File_Write(inum, offset, length, buffer);
-
-    if (status > 0)
-    {
-        std::cerr << "File write failed" << std::endl;
-        exit(1);
-    }
-    
     return 0;
 }

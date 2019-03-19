@@ -76,9 +76,8 @@ int File_Create (Inode inode, std::string path, std::string filename, u_int inum
 int File_Write(u_int inum, u_int offset, u_int length, void* buffer)
 {
     LogAddress* logAddress;
-    u_int block;
-    u_int first_block = offset / BLOCKSIZE;
-    int status = Log_Write(inum, block, BLOCK_SIZE, buffer, logAddress);
+    // Passing 0 fort the block number as it needs only the first block address
+    int status = Log_Write(inum, 0, length, buffer, logAddress);
 
     if (status)
     {
@@ -105,7 +104,7 @@ int File_Write(u_int inum, u_int offset, u_int length, void* buffer)
             std::cerr << "Inode write failed" << std::endl;
             return 1;
         }
-        current_block_addr = current_block_addr + BLOCKSIZE;
+        current_block_addr = current_block_addr + num_bytes_in_block;
     }
 
     // Update the inode in ifile with the found_inode

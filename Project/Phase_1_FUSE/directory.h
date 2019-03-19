@@ -42,12 +42,12 @@ class Directory
         int Directory_create(std::string path, std::string dirname, int mode, int type, u_int inum);
         int Directory_read(u_int inum, void* buffer, u_int offset, u_int length);
         int Directory_write(u_int inum, void* buffer, u_int offset, u_int length);
-        int Directory_Free();
+        int Directory_Free(u_int inum);
 
         int Directory_file_create(std::string path, std::string filename, u_int filesize, int mode, int type, u_int inum);
         int Directory_file_write(u_int inum, void* buffer, u_int offset, u_int length);
         int Directory_file_read(u_int inum, void* buffer, u_int offset, u_int length);
-        int Directory_file_free(std::string path, int mode, uid_t owner, gid_t group);
+        int Directory_file_free(u_int inum);
 };
 
 #endif
