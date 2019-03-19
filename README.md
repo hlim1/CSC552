@@ -8,4 +8,4 @@ Spring 2019
 - Sabin Devkota
 - Terrence Lim
 
-The design document for the project can be found here (link to design document).
+The design document for the project can be found here (https://github.com/hlim1/CSC552/blob/master/Project/LFS_Project_Description.pdf).
