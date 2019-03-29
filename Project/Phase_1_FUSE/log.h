@@ -287,9 +287,22 @@ extern char mountpoint[50]; // directory on which the LFS filesystem should be m
 int Log_Create();
 
 // This function opens the virtual flash file and loads the log structures. It is called by lfs.
-int Log_Open();
+int Log_Open(bool isFlashEmpty=false);
 
 // This function closes the virtual flash file and frees all the memory. Done when unmounting??
 int Log_Close();
+
+int allocateSegmentCache();
+int readFromSegment(Segment *segment, LogAddress logAddress, u_int length, void *buffer);
+
+int loadSegment(u_int segmentNum, Segment* segment);
+int loadSegmentSummary(Segment* segment);
+
+int writeTailSegToFlash();
+int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress *logAddress);
+
+int writeCheckpoint();
+int loadCheckpoint(bool isFlashEmpty=false);
+
 
 #endif
