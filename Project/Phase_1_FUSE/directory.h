@@ -27,7 +27,7 @@ typedef struct DirMap
 } DirMap;
 
 // Extern variables
-extern std::list<Inode> ifile;      // In memory ifile holder that can be acces across the program
+extern std::list<Inode> ifile;      // In memory ifile holder that can be accessed across the program
 extern std::list<DirMap> directory; // This holds the in-memory directory <name,inum> list
 extern Inode inode_of_ifile;        // This holds the inode of ifile
 
@@ -39,10 +39,10 @@ class Directory
     public:
         Directory() {}; // Defualt constructor
         int Directory_initialization();
-        int Directory_create(std::string path, std::string dirname, int mode, int type, u_int inum);
-        int Directory_read(u_int inum, void* buffer, u_int offset, u_int length);
-        int Directory_write(u_int inum, void* buffer, u_int offset, u_int length);
-        int Directory_Free(u_int inum);
+        int Directory_create(std::string path, std::string dirname, int mode, int type, u_int inum);    // Creates a new directory (special type) file
+        int Directory_read(std::string path, void* buffer);                                             // Reads contents of directory file
+        int Directory_write(u_int inum, void* buffer, u_int offset, u_int length);                      // Writes a new file(s) into directory file
+        int Directory_Free(u_int inum);                                                                 // 
 
         int Directory_file_create(std::string path, std::string filename, u_int filesize, int mode, int type, u_int inum);
         int Directory_file_write(u_int inum, void* buffer, u_int offset, u_int length);

@@ -20,9 +20,13 @@
  * Returns:
  *  0 on success, 1 otherwise
  *
- * Initializes the directory layer. It creates the root directory "/"
- * and ".", "..", and ".ifile" files.
- *
+ * Initializes the directory layer. It creates a root directory "/"
+ * that is actually a special file that will hold map of <filename, inum>.
+ * Then, ".", "..", and ".ifile" files gets generated as a defualt that
+ * each will have their own unique inum and stored in the directory file
+ * except the .ifile, which will be store in the checkpoint to break
+ * the circularity issue that can be arised by an .ifile storing its
+ * own inum.
  *********************************************************************
  */
 int Directory::Directory_initialization()
@@ -106,6 +110,52 @@ int Directory_create(std::string path, std::string dirname, mode_t mode, mode_t 
     return 0;
 }
 
+/*
+ *********************************************************************
+ * int
+ * Directory_Read
+ *
+ * Parameters:
+ * std::string path - directory path
+ * void* buffer - The directory entries will be passed and stored in
+ *                this buffer
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * The purpose of this function is to insert the directory entries,
+ * which are the contents of directory file of <name, inum> pairs,
+ * into the passed buffer.
+ *********************************************************************
+ */
+int Directory_read(std::string path, void* buffer)
+{
+    int status = 0;
+    Inode dirInode;
+
+}
+
+/*
+ *********************************************************************
+ * int
+ * Directory_file_create
+ *
+ * Parameters:
+ * std::string path - directory path
+ * string filename - current file name that needs to be created
+ * u_int filesize - size of a file
+ * mode_t mode - mode or the permission of the file
+ * mode_t type - file or directory
+ * u_int inum - inode number of the directory
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * This function will call File_Create function, which is a public
+ * member function of a File class, to create a new file with metadata
+ * passed to its arguments
+ *********************************************************************
+ */
 int Directory::Directory_file_create (std::string path, std::string filename, u_int filesize, int mode, int type, u_int inum)
 {
     Inode inode; // Inode for the new file
