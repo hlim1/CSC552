@@ -123,6 +123,7 @@ int Log_Create(){
 
 int Log_Read(LogAddress logAddress, u_int length, void *buffer){
 
+
 	// check if the given segment is in the segment cache
 
 	// if present, retrieve the length bytes from the address
@@ -130,6 +131,8 @@ int Log_Read(LogAddress logAddress, u_int length, void *buffer){
 
 	// else load the segment in the cache (not in the position of the tail segment)
 	// retrieve the length bytes from the address
+
+	int rc;
 
 	u_int this_seg = logAddress.segment;
 	u_int this_block = logAddress.block;
@@ -171,7 +174,7 @@ int Log_Read(LogAddress logAddress, u_int length, void *buffer){
 		}
 
 		// Assumption is that the memory for all the segment cache is initialized in the beginning
-		Segment *segment = &segmentCache[cacheIndexToLoad]
+		Segment *segment = &segmentCache[cacheIndexToLoad];
 		loadSegment(this_seg, segment);
 
 		lastLoadedCacheIndex = cacheIndexToLoad;
@@ -205,10 +208,10 @@ int loadSegment(u_int segmentNum, Segment* segment){
 		return rc;
 	}
 
-	segment->SegSummary.this_segment = segmentNum;
+	segment->segSummary.this_segment = segmentNum;
 
 	// Load the segment summary information from the first block of the segment
-	loadSegmentSummary(Segment* segment);
+	loadSegmentSummary(segment);
 
 	return rc;
 }
@@ -228,7 +231,7 @@ int loadSegmentSummary(Segment* segment){
 
 // allocate memory for the segmentCache i.e. allocate memory for NUM_SEGS_IN_CACHE segments
 int allocateSegmentCache() {
-	int rc;
+	// int rc;
 
 	// segmentCache = (Segment*) malloc(NUM_SEGS_IN_CACHE * sizeof(Segment));
 	segmentCache = (Segment*) calloc(NUM_SEGS_IN_CACHE, sizeof(Segment));
@@ -449,9 +452,9 @@ int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress 
 	// TODO: Check if inum is valid; If it is valid then this write is part of a file data write
 	// Set the type of the block (in segment summary) to file data type if the inum is valid
 	//
-
+	int type = BLKTYPE_FILE;
 	if(inum == 0 && block == 0){
-		int type = BLKTYPE_OTHER;
+		type = BLKTYPE_OTHER;
 	}
 
 	for(int i=start_block; i<=end_block; i++){
@@ -459,6 +462,8 @@ int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress 
 		tailSegment.segSummary.blockInfos[i].block_offset = block;
 		tailSegment.segSummary.blockInfos[i].type = type;
 	}
+
+	return 0;
 
 }
 
@@ -484,6 +489,8 @@ int Log_Free(LogAddress logAddress, u_int length){
 
 	// update the segment usage table to set the length bytes free
 	// at the given address	
+
+	return 0;
 }
 
 // Opens the flash file and loads the log structures in memory
@@ -491,7 +498,8 @@ int Log_Free(LogAddress logAddress, u_int length){
 // the log is loaded without a checkpoint. 
 // Otherwise the log is loaded using the checkpoint read from flash.
 
-int Log_Open(bool isFlashEmpty=false){
+// Default param: isFlashEmpty=false 
+int Log_Open(bool isFlashEmpty){
 
 	int rc;
 
@@ -652,7 +660,7 @@ int writeCheckpoint(){
 	superBlock.cr_addresses[indexToWrite] = cr_array[indexToWrite].lastSegmentAddress;
 
 	// write the superblock in the first segment
-	size_t length = sizeof(SuperBlock);
+	length = sizeof(SuperBlock);
 	rc = Flash_Write(flash, 0, ceil(length / FLASH_SECTOR_SIZE) , &superBlock);
 	if(rc != 0){
 		cout << "Error writing superblock to flash" << endl;
@@ -668,7 +676,8 @@ int writeCheckpoint(){
 // the structures in memory
 
 // Returns 0 on success, 1 otherwise
-int loadCheckpoint(bool isFlashEmpty=false){
+// Default param: isFlashEmpty = false
+int loadCheckpoint(bool isFlashEmpty){
 	int rc = 0;
 
 	if(!isFlashEmpty){
