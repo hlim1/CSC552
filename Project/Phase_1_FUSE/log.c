@@ -38,7 +38,7 @@ int lastLoadedCacheIndex = -1;
 
 // The smallest unit to read or write data is a segment.
 // The segment cache stores in memory the N most recently accessed segments.
-u_int NUM_SEGS_IN_CACHE;
+u_int NUM_SEGS_IN_CACHE = 4;
 u_int checkpt_interval; // checkpoint interval in segments
 u_int clean_start_threshold; // threshold at which cleaning starts, in segments
 u_int clean_stop_threshold; // threshold at which cleaning stops, in segments
@@ -73,6 +73,8 @@ int Log_Create(){
 	int num_erase_blocks = superBlock.block_size * 
 		superBlock.segment_size * superBlock.num_segments / FLASH_SECTORS_PER_BLOCK;
 
+	// cout << num_erase_blocks << endl;
+
 	rc = Flash_Create(superBlock.fileName, superBlock.wearLimit, num_erase_blocks);
 
 	if (rc != 0){
@@ -81,7 +83,12 @@ int Log_Create(){
 		return rc;
 	}
 
+
+
 	rc = Log_Open(true);
+	
+
+
 	if(rc != 0){
 		cout << "Error loading log" << endl;
 		return rc;
@@ -93,6 +100,9 @@ int Log_Create(){
 	// directory.Create();	//EDIT
 
 	rc = Log_Close();
+	
+	// cout << "After closing log" << endl;
+
 	if(rc != 0){
 		cout << "Error closing log" << endl;
 		return rc;
@@ -233,6 +243,9 @@ int loadSegmentSummary(Segment* segment){
 int allocateSegmentCache() {
 	// int rc;
 
+	// cout << "Allocating segment cache" << endl;
+	// cout << NUM_SEGS_IN_CACHE << endl;
+
 	// segmentCache = (Segment*) malloc(NUM_SEGS_IN_CACHE * sizeof(Segment));
 	segmentCache = (Segment*) calloc(NUM_SEGS_IN_CACHE, sizeof(Segment));
 	if(segmentCache == NULL){
@@ -240,12 +253,19 @@ int allocateSegmentCache() {
 		exit(1);
 	}
 
+	// cout << segmentCache << endl;
+
 	// for each segment in the cache, allocate memory for each segment
 	for(int i=0; i<NUM_SEGS_IN_CACHE; i++){
 		// segmentCache[i].seg_bytes = malloc(superBlock.segment_size * superBlock.block_size
 			// * FLASH_SECTOR_SIZE);
 		segmentCache[i].seg_bytes = calloc(1, superBlock.segment_size * superBlock.block_size
 			* FLASH_SECTOR_SIZE);
+
+		// cout << "Iteration "<<  i  << endl;
+		// cout << superBlock.segment_size * superBlock.block_size
+		// 	* FLASH_SECTOR_SIZE << endl;
+
 		if(segmentCache[i].seg_bytes == NULL){
 			cout << "Memory allocation for segment cache failed" << endl;
 			exit(1);
@@ -259,6 +279,8 @@ int allocateSegmentCache() {
 			cout << "Memory allocation for segment cache failed" << endl;
 			exit(1);
 		}
+
+		// cout << sizeof(BlockInfo) * superBlock.segment_size << endl; 
 
 	}
 
@@ -385,9 +407,11 @@ int writeTailSegToFlash(){
 	// update the next segment field in the tail segment's summary
 	Segment tailSegment = segmentCache[tailSegIndex];
 	// set the next segment address to 1 plus the current segment address
-	
+
 	u_int next_segment = tailSegment.segSummary.this_segment + 1;
 	tailSegment.segSummary.next = next_segment;
+
+	// cout << next_segment << endl;
 
 	// TODO: Set the next segment address to the address returned by the segment cleaner
 	// It is the segment cleaner's job to provide the next available clean segment
@@ -395,13 +419,31 @@ int writeTailSegToFlash(){
 	
 	u_int this_segment = tailSegment.segSummary.this_segment;
 
+	// cout << this_segment << endl;
+
 	// write the segment summary to the first block of segment or as needed by the size of 
 	// segment summary
 	SegSummary thisSegSummary = tailSegment.segSummary;
 
+	// cout << sizeof(SegSummary) << endl;
+	// cout << sizeof(BlockInfo) * superBlock.segment_size << endl;
+	// cout << "Num bytes in block " <<  num_bytes_in_block << endl;
+
+	// cout << "Before writing segment summary" << endl;
+	// cout << tailSegment.seg_bytes << " " << &thisSegSummary << endl;
+
 	memcpy(tailSegment.seg_bytes, &thisSegSummary, sizeof(SegSummary));
+	
+	cout << tailSegment.seg_bytes << endl;
+	cout << (((char*)tailSegment.seg_bytes) + sizeof(SegSummary)) << endl;
+	
+
 	memcpy(((char*)tailSegment.seg_bytes) + sizeof(SegSummary), thisSegSummary.blockInfos, 
 		sizeof(BlockInfo) * superBlock.segment_size);
+		
+	
+
+	cout << "After writing segment summary " << endl;
 
 	// write the tail segment to Flash
 	int rc = Flash_Write(flash, this_segment * num_sectors_in_segment, num_sectors_in_segment,
@@ -520,6 +562,10 @@ int Log_Open(bool isFlashEmpty){
 
 	u_int get_num_erase_blocks;
 	flash = Flash_Open(filename, flags, &get_num_erase_blocks);
+
+	// cout << isFlashEmpty << endl;
+	// cout << get_num_erase_blocks << " " << filename << endl;
+
 	if (flash == NULL){
 		rc = 1;
 		cout << "Error opening flash" << endl;
@@ -548,6 +594,8 @@ int Log_Open(bool isFlashEmpty){
 	num_bytes_in_block = FLASH_SECTOR_SIZE * superBlock.block_size;
 	num_bytes_in_segment = num_bytes_in_block * superBlock.segment_size;
 	num_sectors_in_segment = superBlock.segment_size * superBlock.block_size;
+
+	// cout << num_bytes_in_block << " " << num_bytes_in_segment << " " << num_sectors_in_segment << endl;
 
 	// allocate memory for the segment cache
 	allocateSegmentCache();
@@ -580,6 +628,8 @@ int Log_Open(bool isFlashEmpty){
 		segmentCache[tailSegIndex].segSummary.this_segment = 1;
 	}
 
+	// cout << segmentCache[tailSegIndex].segSummary.this_segment << endl;
+
 	return rc;
 
 }
@@ -590,10 +640,13 @@ int Log_Close(){
 	int rc = 0;
 	
 	rc = writeCheckpoint();
+	
 	if(rc != 0){
 		cout << "Could not write checkpoint to flash" << endl;
 		return rc;
 	}
+
+	// cout << "After writing checkpoint" << endl;
 
 	// free memory
 	
@@ -626,6 +679,8 @@ int writeCheckpoint(){
 
 	// write the current tail segment to flash
 	writeTailSegToFlash();
+
+	// cout << "After writing tail to Flash" << endl;
 
 	// prepare the checkpoint and write it to flash on the new segment
 

@@ -1,5 +1,6 @@
 CXX=g++
-CXXFLAGS=-Wall -I.
+# CXXFLAGS=-Wall -I.
+CXXFLAGS = -Wall -g -I.
 # CXXFLAGS = -Wall -g -I. -lfuse
 
 DEPS = flash.h log.h

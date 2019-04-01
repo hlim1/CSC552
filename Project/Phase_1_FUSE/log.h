@@ -196,7 +196,7 @@ extern CR cr_array[2];
 typedef struct BlockInfo {
 	u_int inum;	// file number of the block
 	u_int block_offset;	// offset i.e. block number in the file's inode
-	char uID[20]; //The id combines the inum and the version number of the file.
+	// char uID[20]; //The id combines the inum and the version number of the file.
 	int type; // To determine if this block is a file block or inode block or dir block or seg 
 	// usage block
 } BlockInfo;
