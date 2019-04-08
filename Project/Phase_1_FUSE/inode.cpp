@@ -76,3 +76,42 @@ void Inode::Inode_update_last_access()
 
     this->container.m_last_accessed = cur_time;
 }
+
+/*
+ * find and returns the inum of the target file inode with its metadata (name and path).
+ */
+u_int Inode::Inode_find_inum(const char* filename, const char* path)
+{
+    u_int inum = 1;
+    // Open .ifile
+    ifstream ifile(".ifile", std::ifstream::binary);
+    if (ifile)
+    {
+        ifile.seekg(0, ifile.end);
+        int length = ifile.tellg();
+        int size = length / sizeof(Inode::Container);
+        ifile.seekg(0, ifile.beg);
+
+        Inode inodes[size];
+        ifile.read((char*)&inodes, length)
+
+        for (int i = 0; i < size; i++)
+        {
+            if (strcmp(inodes[i].m_path, path) == 0 && strcmp(inodes[i].m_filename, filename) == 0)
+            {
+                inum = inodes.m_inum;
+            }   
+        }
+        if (inum == 1)
+        {
+            cerr << "Unable to find the correct inode for either the filename or path or both" << endl;
+            return 1;
+        }
+    }
+    else
+    {
+        cerr << "Failed to open .ifile in Inode_find_inum function" << endl;
+        return 1;
+    }
+    return inum;
+}

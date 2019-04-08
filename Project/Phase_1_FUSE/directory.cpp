@@ -33,16 +33,21 @@ int Directory::Directory_initialization()
 {
     int status = 0; // 0 is success and > 0 is fail
 
-    u_int inum = INUMOFROOTDIR;
+    u_int inum = INUMOFROOTDIR; // Always zero(0)
+    if (inum != 0)
+    {
+        cerr << "Invalid inum for the root directory" << endl;
+        return 1;
+    }
 
-    // Create a root directory ("/": Forward slash)
+    // Creates a root directory ("/": Forward slash)
     if (Directory_create ("/", "/", S_IFDIR, S_IRWXU, inum) > 0)
     {
         std::cerr << "Root directory '/' creation failed." << std::endl;
-        exit(1);
+        return 1;
     }
 
-    // Create .ifile when initializing the directory layer
+    // Creates .ifile when initializing the directory layer
     inum = INUMOFIFILE;
     if (Directory_file_create ("/", ".file", 0, S_IFREG, S_IRUSR, inum) > 0)
     {
@@ -59,7 +64,7 @@ int Directory::Directory_initialization()
  * Directory_create
  *
  * Parameters:
- * std::string path - directory path
+ * const char* path - directory path
  * string dirname - current directory name that needs to be created
  * mode_t mode - mode or the permission of the file
  * mode_t type - file or directory
@@ -73,37 +78,41 @@ int Directory::Directory_initialization()
  *
  *********************************************************************
  */
-int Directory_create(std::string path, std::string dirname, mode_t mode, mode_t type, u_int inum)
+int Directory_create(const char* path, const char* dirname, mode_t mode, mode_t type, u_int inum)
 {
     Inode inode;                // Inode for the new file
     DirMap cur_directory;       // "."
     DirMap parent_directory;    // ".."
     u_int filesize = 0;
 
+    // Creates a new directory, which really is simply a file that will hold <name, inum> list,
+    // with given directory name and metadata.
     if (Directory_file_create (path, dirname, filesize, mode, type, inum) > 0)
     {
         std::cerr << "file '.' creation failed." << std::endl;
-        exit(1);
+        return 1;
     }
 
     // Every directory has '.' and '..' files
+    char current[] = ".";
     inum = inum + 1;
-    if (Directory_file_create ("/", ".", filesize, S_IFREG, S_IRUSR, inum) > 0)
+    if (Directory_file_create ("/", current, filesize, S_IFREG, S_IRUSR, inum) > 0)
     {
         std::cerr << "file '.' creation failed." << std::endl;
-        exit(1);
+        return 1;
     }
-    cur_directory.name = ".";
+    memcpy(cur_directory.name, current, strlen(current)+1);
     cur_directory.inum = inum;
     directory.push_back(cur_directory);
 
+    char parent[] = "..";
     inum = inum + 1;
-    if (Directory_file_create ("/", "..", filesize, S_IFREG, S_IRUSR, inum) > 0)
+    if (Directory_file_create ("/", parent, filesize, S_IFREG, S_IRUSR, inum) > 0)
     {
         std::cerr << "file '..' creation failed." << std::endl;
-        exit(1);
+        return 1;
     }
-    parent_directory.name = "..";
+    memcpy(cur_directory.name, parent, strlen(parent)+1);
     parent_directory.inum = inum;
     directory.push_back(parent_directory);
 
@@ -116,7 +125,7 @@ int Directory_create(std::string path, std::string dirname, mode_t mode, mode_t 
  * Directory_Read
  *
  * Parameters:
- * std::string path - directory path
+ * const char* path - directory path
  * void* buffer - The directory entries will be passed and stored in
  *                this buffer
  *
@@ -128,11 +137,24 @@ int Directory_create(std::string path, std::string dirname, mode_t mode, mode_t 
  * into the passed buffer.
  *********************************************************************
  */
-int Directory_read(std::string path, void* buffer)
+int Directory_read(const char* path, const char* dirname, int length, void* buffer)
 {
     int status = 0;
     Inode dirInode;
+    File file;
 
+    // Find the inum of the target directory with its path and name
+    u_int inum = dirInode.Inode_find_inum(dirname, path);
+    int offset;
+
+    status = file.File_Read(inum, offset, length, buffer);
+    if (status > 0)
+    {
+        cerr << "Error while reading the file" << endl;
+        return 1;
+    }
+
+    return 0;
 }
 
 /*
@@ -141,7 +163,7 @@ int Directory_read(std::string path, void* buffer)
  * Directory_file_create
  *
  * Parameters:
- * std::string path - directory path
+ * const char* path - directory path
  * string filename - current file name that needs to be created
  * u_int filesize - size of a file
  * mode_t mode - mode or the permission of the file
@@ -156,22 +178,25 @@ int Directory_read(std::string path, void* buffer)
  * passed to its arguments
  *********************************************************************
  */
-int Directory::Directory_file_create (std::string path, std::string filename, u_int filesize, int mode, int type, u_int inum)
+int Directory::Directory_file_create (const char* path, const char* filename, u_int filesize, int mode, int type, u_int inum)
 {
-    Inode inode; // Inode for the new file
-    File file;
+    Inode new_Inode; // Inode for the new file
+    File new_file;
 
     // Create a file. If successful, inode should be initialized with empty direct pointers
-    if (file.File_Create(inode, path, filename, inum, filesize, mode, type))
+    if (new_file.File_Create(new_inode, path, filename, inum, filesize, mode, type))
     {
         std::cerr << "File create failed in Directory file creation" << std::endl;
         return 1;
     }
 
+    // If the currently handling file is ifile, then store it into the globally accessible
+    // inode_of_ifile, so it can be accessed in the log layer.
+    // Else, store it to the globally accessible inode_of_current_file object for the log layer, again.
     if (filename == ".ifile")
         inode_of_ifile = inode;
     else
-        ifile.push_back(inode);
+        inode_of_current_file = inode;
 
     return 0;
 }

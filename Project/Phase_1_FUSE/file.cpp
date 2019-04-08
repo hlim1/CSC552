@@ -32,22 +32,18 @@
  *
  *********************************************************************
  */
-int File_Create (Inode inode, std::string path, std::string filename, u_int inum, u_int filesize, int mode, int type)
+int File_Create (Inode* inode, const char* path, const char* filename, u_int inum, u_int filesize, int mode, int type)
 {
     time_t cur_time;
     time(&cur_time);
 
+    // Initialize the inode
     int status = inode.Inode_Initialization(filename, path, inum, cur_time, filesize, mode, type);
     if (status)
     {
         std::cerr << "File Create failed" << std::endl;
         return 1;
     }
-
-    // Creates an empty file on a disk with a given file name
-    std::ofstream ofs;
-    ofs.open(filename.c_str(), std::ios::binary | std::ios::out | std::ios::app);
-    ofs.close();
 
     return 0;
 }
@@ -148,7 +144,7 @@ int File_Read(u_int inum, u_int offset, u_int length, void* buffer)
 {
     // Find the target inode from the .ifile
     Inode found_inode;
-    int index = Inode_getter_for_list(inum, found_inode, ifile);
+    int index = Inode_getter(inum, found_inode);
     if (index == 1)
     {
         std::cerr << "Unable to find the inode of given inum" << std::endl;

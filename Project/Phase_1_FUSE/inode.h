@@ -62,6 +62,7 @@ class Inode
         int Inode_Initialization(const char* filename, const char* path, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type);
         int Inode_Write(u_int index, u_int seg, u_int block_address);
         u_int Inode_get_inum();
+        u_int Inode_find_inum(const char* filename, const char* path);
         Block_Ptr* Inode_get_block_ptr();
         void Inode_update_last_access();
 } inode;
