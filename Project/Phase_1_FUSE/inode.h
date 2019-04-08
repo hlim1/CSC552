@@ -17,7 +17,7 @@
 #define INODE_H
 
 // C++ std. libraries list here:
-#include <string>
+#include <string.h>
 #include <fstream>
 #include <list>
 
@@ -29,41 +29,41 @@
 // Class header files list under here:
 // #include "log.h"
 
-typedef struct Direct_Block_Ptr
+struct Block_Ptr
 {
     u_int segment;
     u_int block;
-} Direct_Block_Ptr;
+} block_Ptr;
 
 class Inode
 {
-    std::string  m_file;    // File name
-    mode_t m_mode;    // Mode (or permission) of a file or directory
-    uid_t  m_owner;   // Set the defualt to the current user id
-    gid_t  m_group;   // Set the default to same as the owner's username
-
-    u_int  m_filesize;
-    u_int  m_inum;
-
-    Direct_Block_Ptr m_direct_pointer[4]; // 4 direct pointers to the first 4 block of the of the file
-    // u_int* inm_dp; // Indirect pointer to a block of direct pointer Phase 2
-
-    mode_t m_type;  // Type of an Inode. Either a regular file (S_IFREG) or directory (S_IFDIR)
-    time_t last_modified;   // Holds the last modified time
-    time_t last_accessed;   // Holds the last modified time
-
     public:
+        struct Container
+        {
+            char  m_file[20];    // File name
+            char  m_path[50];    // Path of a file where it resides
+            mode_t m_mode;    // Mode (or permission) of a file or directory
+            mode_t m_type;  // Type of an Inode. Either a regular file (S_IFREG) or directory (S_IFDIR)
+            uid_t  m_owner;   // Set the defualt to the current user id
+            gid_t  m_group;   // Set the default to same as the owner's username
+
+            u_int  m_filesize;
+            u_int  m_inum;
+
+            Block_Ptr* m_direct_pointer[4]; // 4 direct pointers to the first 4 block of the of the file
+            std::list<Block_Ptr> m_indirect_pointers; // Indirect pointer to a block of direct pointer Phase 2
+
+            time_t m_last_modified;   // Holds the last modified time
+            time_t m_last_accessed;   // Holds the last modified time
+        } container;
+
         Inode() {};
         // A Constructor for inode with the passed metadata and allocate the inode in the ifile
-        int Inode_Initialization(std::string filename, std::string path, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type);
-        int Inode_Write(u_int size_per_block, u_int seg, u_int block_address);
-        int Inode_getter(u_int inum, Inode &found_inode, std::list<Inode> ifile);
-        u_int Inode_get_last_inum_in_ifile();
+        int Inode_Initialization(const char* filename, const char* path, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type);
+        int Inode_Write(u_int index, u_int seg, u_int block_address);
         u_int Inode_get_inum();
-
-        Direct_Block_Ptr* Inode_get_block_ptr();
-
-        void Inode_update_access_time();
+        Block_Ptr* Inode_get_block_ptr();
+        void Inode_update_last_access();
 } inode;
 
 #endif
