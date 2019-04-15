@@ -17,6 +17,7 @@
 #define INODE_H
 
 // C++ std. libraries list here:
+#include <iostream>
 #include <string.h>
 #include <fstream>
 #include <list>
@@ -65,7 +66,7 @@ class Inode
         int Inode_Find_Inode(const char* filename, const char* path, Inode* found_inode);
         int Inode_Update_Last_Access();
         int Inode_Getter(u_int inum, u_int offset, Inode* inode);
-        int Inode_Get_Block_Ptr(Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_block_ptr);
-} inode;
+        int Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_block_ptr);
+};
 
 #endif

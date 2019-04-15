@@ -46,8 +46,22 @@ int Inode::Inode_Initialization(const char* filename, const char* path, u_int fi
  */
 int Inode::Inode_Write(u_int index, u_int seg, u_int block_address)
 {
-    this->container.m_direct_pointer[index].segment = seg;
-    this->container.m_direct_pointer[index].block = block_address;;
+    // Updating first 4 direct pointers
+    if (index < 4)
+    {
+        this->container.m_direct_pointer[index].segment = seg;
+        this->container.m_direct_pointer[index].block = block_address;
+    }
+    else
+    {
+        // Temporary block that will be pushed back to the indirect pointer list
+        Block_Ptr ind_ptr;
+        ind_ptr.segment = seg;
+        ind_ptr.block = block_address;
+
+        // Add rest of the blocks to the indirect pointer list
+        this->container.m_indirect_pointers.push_back(ind_ptr);
+    }
 
     return 0;
 }
@@ -75,6 +89,7 @@ int Inode::Inode_Update_Last_Access()
     time(&cur_time);
 
     this->container.m_last_accessed = cur_time;
+    return 0;
 }
 
 /*
@@ -86,7 +101,7 @@ int Inode::Inode_Find_Inode(const char* filename, const char* path, Inode* found
 {
     int status = 1;
     // Open .ifile
-    ifstream ifile(".ifile", std::ifstream::binary);
+    std::ifstream ifile(".ifile", std::ifstream::binary);
     if (ifile)
     {
         ifile.seekg(0, ifile.end);
@@ -95,25 +110,26 @@ int Inode::Inode_Find_Inode(const char* filename, const char* path, Inode* found
         ifile.seekg(0, ifile.beg);
 
         Inode inodes[size];
-        ifile.read((char*)&inodes, length)
+        ifile.read((char*)&inodes, length);
 
         for (int i = 0; i < size; i++)
         {
-            if (strcmp(inodes[i].m_path, path) == 0 && strcmp(inodes[i].m_filename, filename) == 0)
+            if (strcmp(inodes[i].container.m_path, path) == 0 && strcmp(inodes[i].container.m_file, filename) == 0)
             {
-                found_inode = inode[i];
+                //memcpy(found_inode, inodes[i], sizeof(Inode::Container));
+                *found_inode = inodes[i];
                 status = 0;
             }   
         }
         if (status == 1)
         {
-            cerr << "Unable to find the correct inode for either the filename or path or both" << endl;
+            std::cerr << "Unable to find the correct inode for either the filename or path or both" << std::endl;
             return 1;
         }
     }
     else
     {
-        cerr << "Failed to open .ifile in Inode_find_inum function" << endl;
+        std::cerr << "Failed to open .ifile in Inode_find_inum function" << std::endl;
         return 1;
     }
     return 0;
@@ -125,20 +141,20 @@ int Inode::Inode_Find_Inode(const char* filename, const char* path, Inode* found
 int Inode::Inode_Getter(u_int inum, u_int offset, Inode* inode)
 {
      // Open .ifile
-    ifstream ifile(".ifile", std::ifstream::binary);
+    std::ifstream ifile(".ifile", std::ifstream::binary);
     if (ifile)
     {
         ifile.seekg(offset);
-        istrm.read((char*)&inode, sizeof(Inode::Container));
-        if (inode->m_inum != inum)
+        ifile.read((char*)&inode, sizeof(Inode::Container));
+        if (inode->container.m_inum != inum)
         {
-            cerr << "Unable to find the correct inode for either the filename or path or both" << endl;
+            std::cerr << "Unable to find the correct inode for either the filename or path or both" << std::endl;
             return 1;
         }
     }
     else
     {
-        cerr << "Failed to open .ifile in Inode_find_inum function" << endl;
+        std::cerr << "Failed to open .ifile in Inode_find_inum function" << std::endl;
         return 1;
     }
     return 0;   
@@ -148,21 +164,21 @@ int Inode::Inode_Getter(u_int inum, u_int offset, Inode* inode)
  *  Updates the passed empty direct pointer array and indirect pointer list with the current
  *  inode's pointers to blocks
  */
-int Inode_Get_Block_Ptr(Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_block_ptr)
+int Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_block_ptr)
 {
     int status = 0;
     // If the first m_direct_pointer is NULL (empty), it's an error that the blocks are not properly
     // initialized with the correct value
-    if (this->container.m_direct_pointer[i].segment == 0 || this->container.m_direct_pointer[i].block == 0)
+    if (inode.container.m_direct_pointer[0].segment == 0 || inode.container.m_direct_pointer[0].block == 0)
     {
-        status = 1;
+        return 1;
     }
 
     // Set direct pointers
     for (int i = 0; i < 4; i++)
     {
-        dir_block_ptr[i].segment = this->container.m_direct_pointer[i].segment;
-        dir_block_ptr[i].block = this->container.m_direct_pointer[i].block;
+        dir_block_ptr[i].segment = inode.container.m_direct_pointer[i].segment;
+        dir_block_ptr[i].block = inode.container.m_direct_pointer[i].block;
         status = 0;
     }
 
@@ -174,15 +190,15 @@ int Inode_Get_Block_Ptr(Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_bl
 
     // Set indirect pointers
     Block_Ptr ind_ptr;
-    std::list<Block_Ptr>::Iterator iter;
-    for (iter = this->container.m_indirect_pointers.begin(); iter != this->container.m_indirect_pointers.end(); iter++)
+    std::list<Block_Ptr>::iterator iter;
+    for (iter = inode.container.m_indirect_pointers.begin(); iter != inode.container.m_indirect_pointers.end(); iter++)
     {
-        ind_ptr.segment = iter.segment;
-        ind_ptr.block = iter.block;
+        ind_ptr.segment = iter->segment;
+        ind_ptr.block = iter->block;
         ind_block_ptr.push_back(ind_ptr);
     }
 
-    if (ind_ptr.size() != this->container.m_indirect_pointers.size())
+    if (ind_block_ptr.size() != inode.container.m_indirect_pointers.size())
         return 1;
 
     return 1;
