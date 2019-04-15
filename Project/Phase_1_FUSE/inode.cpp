@@ -28,10 +28,13 @@ int Inode::Inode_Initialization(const char* filename, const char* path, u_int fi
     // Inode gets created before the actual file, thus initialize the direct pointers to null at initialization stage.
     // Then, set them to the actual blocks when writing to the files
     for (int i = 0; i < 4; i++)
-        container.m_direct_pointer[i] = NULL;
+    {
+        container.m_direct_pointer[i].segment = 0;
+        container.m_direct_pointer[i].block = 0;
+    }
 
-    container.m_mode        = mode;
-    container.m_type        = type;
+    container.m_mode          = mode;
+    container.m_type          = type;
     container.m_last_modified = cur_time;
     container.m_last_accessed = cur_time;
 
@@ -43,33 +46,30 @@ int Inode::Inode_Initialization(const char* filename, const char* path, u_int fi
  */
 int Inode::Inode_Write(u_int index, u_int seg, u_int block_address)
 {
-    this->container.m_direct_pointer[index]->segment = seg;
-    this->container.m_direct_pointer[index]->block = block_address;;
+    this->container.m_direct_pointer[index].segment = seg;
+    this->container.m_direct_pointer[index].block = block_address;;
 
     return 0;
 }
 
 /*
  * Returns the inum of the current inode
+ * If the inum is less than the size of a single Inode container,
+ * it's an error that should return return value of 1
  */
-u_int Inode::Inode_get_inum()
+int Inode::Inode_Get_Inum(u_int& inum)
 {
-    return this->container.m_inum;
-}
-
-/*
- * Returns the pointer to the direct pointer array
- */
-Block_Ptr* Inode::Inode_get_block_ptr()
-{
-    return *this->container.m_direct_pointer;
+    inum = this->container.m_inum;
+    if (inum < sizeof(Inode::Container))
+        return 1;
+    return 0;
 }
 
 /*
  * Updates the last access time to the file.
  * Always call when the file gets opened (read/write)
  */
-void Inode::Inode_update_last_access()
+int Inode::Inode_Update_Last_Access()
 {
     time_t cur_time;
     time(&cur_time);
@@ -78,11 +78,13 @@ void Inode::Inode_update_last_access()
 }
 
 /*
- * find and returns the inum of the target file inode with its metadata (name and path).
+ * Find and returns the inode of the target file with its metadata (name and path).
+ * This is useful when we do not know or have any information about the inode, such as
+ * inum, other than the file name and path.
  */
-u_int Inode::Inode_find_inum(const char* filename, const char* path)
+int Inode::Inode_Find_Inode(const char* filename, const char* path, Inode* found_inode)
 {
-    u_int inum = 1;
+    int status = 1;
     // Open .ifile
     ifstream ifile(".ifile", std::ifstream::binary);
     if (ifile)
@@ -99,10 +101,11 @@ u_int Inode::Inode_find_inum(const char* filename, const char* path)
         {
             if (strcmp(inodes[i].m_path, path) == 0 && strcmp(inodes[i].m_filename, filename) == 0)
             {
-                inum = inodes.m_inum;
+                found_inode = inode[i];
+                status = 0;
             }   
         }
-        if (inum == 1)
+        if (status == 1)
         {
             cerr << "Unable to find the correct inode for either the filename or path or both" << endl;
             return 1;
@@ -113,5 +116,74 @@ u_int Inode::Inode_find_inum(const char* filename, const char* path)
         cerr << "Failed to open .ifile in Inode_find_inum function" << endl;
         return 1;
     }
-    return inum;
+    return 0;
+}
+
+/*
+ *  When we know about the inum and the offset of the file, use the offset to retrieve the inode and return the inode.
+ */
+int Inode::Inode_Getter(u_int inum, u_int offset, Inode* inode)
+{
+     // Open .ifile
+    ifstream ifile(".ifile", std::ifstream::binary);
+    if (ifile)
+    {
+        ifile.seekg(offset);
+        istrm.read((char*)&inode, sizeof(Inode::Container));
+        if (inode->m_inum != inum)
+        {
+            cerr << "Unable to find the correct inode for either the filename or path or both" << endl;
+            return 1;
+        }
+    }
+    else
+    {
+        cerr << "Failed to open .ifile in Inode_find_inum function" << endl;
+        return 1;
+    }
+    return 0;   
+}
+
+/*
+ *  Updates the passed empty direct pointer array and indirect pointer list with the current
+ *  inode's pointers to blocks
+ */
+int Inode_Get_Block_Ptr(Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_block_ptr)
+{
+    int status = 0;
+    // If the first m_direct_pointer is NULL (empty), it's an error that the blocks are not properly
+    // initialized with the correct value
+    if (this->container.m_direct_pointer[i].segment == 0 || this->container.m_direct_pointer[i].block == 0)
+    {
+        status = 1;
+    }
+
+    // Set direct pointers
+    for (int i = 0; i < 4; i++)
+    {
+        dir_block_ptr[i].segment = this->container.m_direct_pointer[i].segment;
+        dir_block_ptr[i].block = this->container.m_direct_pointer[i].block;
+        status = 0;
+    }
+
+    if (status == 1)
+    {
+        std::cerr << "Direct pointer array is empty" << std::endl;
+        return 1;
+    }
+
+    // Set indirect pointers
+    Block_Ptr ind_ptr;
+    std::list<Block_Ptr>::Iterator iter;
+    for (iter = this->container.m_indirect_pointers.begin(); iter != this->container.m_indirect_pointers.end(); iter++)
+    {
+        ind_ptr.segment = iter.segment;
+        ind_ptr.block = iter.block;
+        ind_block_ptr.push_back(ind_ptr);
+    }
+
+    if (ind_ptr.size() != this->container.m_indirect_pointers.size())
+        return 1;
+
+    return 1;
 }

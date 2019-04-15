@@ -435,8 +435,14 @@ int writeTailSegToFlash(){
 	memcpy(tailSegment.seg_bytes, &thisSegSummary, sizeof(SegSummary));
 	
 	cout << tailSegment.seg_bytes << endl;
-	cout << (((char*)tailSegment.seg_bytes) + sizeof(SegSummary)) << endl;
+	cout << "PRINT HERE: " <<  (((char*)tailSegment.seg_bytes) + sizeof(SegSummary)) << endl;
 	
+
+    if (((char*)tailSegment.seg_bytes) + sizeof(SegSummary) == NULL)
+        cerr << "ERROR HERE" << endl;
+
+    if (thisSegSummary.blockInfos == NULL)
+        cerr << "thisSegSum" << endl;
 
 	memcpy(((char*)tailSegment.seg_bytes) + sizeof(SegSummary), thisSegSummary.blockInfos, 
 		sizeof(BlockInfo) * superBlock.segment_size);

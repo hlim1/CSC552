@@ -72,50 +72,46 @@ int File_Create (Inode* inode, const char* path, const char* filename, u_int inu
 int File_Write(u_int inum, u_int offset, u_int length, void* buffer)
 {
     LogAddress* logAddress;
-    // Passing 0 fort the block number as it needs only the first block address
+    // Passing 0 for the block number as it needs only the first block address
     int status = Log_Write(inum, 0, length, buffer, logAddress);
-
     if (status)
     {
-        std::cerr << "Failed to write to inode" << std::endl;
+        std::cerr << "Failed to write to log" << std::endl;
+        return 1;
+    }
+
+    if (inum != offset)
+    {
+        std::cerr << "Either offset or the inum is invalid" << std::endl;
         return 1;
     }
 
     Inode found_inode;
-    int index = Inode_getter_for_list(inum, found_inode, ifile);
-    if (index == 1)
+    status = found_Inode.Inode_Getter(inum, offset, found_inode);
+    if (status)
     {
-        std::cerr << "Unable to find the inode of given inum" << std::endl;
+        std::cerr << "Failed to get the target inode" << std::endl;
         return 1;
     }
 
     // Setting direct pointers of a file inode
     int current_segment = logAddress.segment;
     int current_block_addr = logAddress.block;;
-    for (int i = 0; i < 4; i++)
+
+    int number_of_blocks = ceil(length / (FLASH_SECTOR_SIZE * superBlock.block_size));
+
+    for (int i = 0; i < number_of_blocks; i++)
     {
+        // Update the currently opened file inode's block pointers
         status = found_inode.Inode_Write(i, current_segment, current_block_addr);
         if (status)
         {
             std::cerr << "Inode write failed" << std::endl;
             return 1;
         }
+        // Update the current_block address and segs to the next block and segment addresses
         current_block_addr = current_block_addr + num_bytes_in_block;
-    }
-
-    // Update the inode in ifile with the found_inode
-    std::list<Inode>::iterator iter;
-    int idx = 0;
-    for (iter = ifile.begin(); iter != ifile.end(); iter++)
-    {
-        if (idx == index)
-        {
-            u_int inum_chck = found_inode.Inode_get_inum();
-            if (inum == inum_chck)
-                *iter = found_inode;
-            else
-                return 1;
-        }
+        current_segment = current_segment + num_bytes_in_segment;
     }
 
     return 0;
@@ -142,23 +138,48 @@ int File_Write(u_int inum, u_int offset, u_int length, void* buffer)
  */
 int File_Read(u_int inum, u_int offset, u_int length, void* buffer)
 {
+    int status = 0;
     // Find the target inode from the .ifile
     Inode found_inode;
-    int index = Inode_getter(inum, found_inode);
-    if (index == 1)
+    status = found_Inode.Inode_Getter(inum, offset, found_inode);
+    if (status)
     {
-        std::cerr << "Unable to find the inode of given inum" << std::endl;
+        std::cerr << "Failed to get the target inode" << std::endl;
         return 1;
     }
 
     LogAddress logAddress;
-    Direct_Block_Ptr* block_ptr = found_inode.Inode_get_block_ptr();
 
-    for (int i = 0; i < 4; i++)
+    Block_Ptr dir_block_ptr[4];
+    std::list<Block_Ptr> ind_block_ptr
+    status = found_inode.Inode_Get_Block_Ptr(dir_block_ptr, ind_block_ptr);
+
+    if (status == 1)
     {
-        logAddress.segment = *(block_ptr + i).segment;
-        logAddress.block = *(block_ptr + i).block;
+        std::cerr << "Failed to get either the direct or indirect pointers (or both) to the blocks" << std::endl;
+        return 1;
+    }
 
+    int number_of_blocks = ceil(length / (FLASH_SECTOR_SIZE * superBlock.block_size));
+    for (int i = 0; i < number_of_blocks; i++)
+    {
+        // Assign direct pointers to the log addresses
+        if (i < 4)
+        {
+            logAddress.segment = dir_block_ptr[i].segment;
+            logAddress.block = dir_ block_ptr[i].block;
+        }
+        else
+        {
+            // Assign indirect pointers to the log address
+            std::<Block_Ptr>::iterator iter;
+            for (iter = ind_block_ptr.begin(); iter != ind_block_ptr.end(); iter++)
+            {
+                Block_Ptr ind_ptr;
+                logAddress.segment = iter.segment;
+                logAddress.block = iter.block;
+            }
+        }
         status = Log_Read(logAddress, length, buffer);
         if (status)
         {
@@ -167,24 +188,8 @@ int File_Read(u_int inum, u_int offset, u_int length, void* buffer)
         }
     }
 
-
     // Update the last access time of the file
-    found_inode.Inode_update_last_access_time();
-
-    // Update the inode in ifile with the found_inode
-    std::list<Inode>::iterator iter;
-    int idx = 0;
-    for (iter = ifile.begin(); iter != ifile.end(); iter++)
-    {
-        if (idx == index)
-        {
-            u_int inum_chck = found_inode.Inode_get_inum();
-            if (inum == inum_chck)
-                *iter = found_inode;
-            else
-                return 1;
-        }
-    }
+    found_inode.Inode_Update_Last_Access_Time();
 
     return 0;
 }

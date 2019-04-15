@@ -16,6 +16,7 @@
 // #include "file.h"
 #include <ctime>
 #include <map>
+#include <string.h>
 
 // using namespace std;
 

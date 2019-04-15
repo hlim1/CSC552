@@ -143,10 +143,23 @@ int Directory_read(const char* path, const char* dirname, int length, void* buff
     Inode dirInode;
     File file;
 
-    // Find the inum of the target directory with its path and name
-    u_int inum = dirInode.Inode_find_inum(dirname, path);
-    int offset;
+    // Find the inode of the target directory with its path and name
+    status = dirInode.Inode_Find_Inode(dirname, path, dirInode);
+    if (status > 0)
+    {
+        cerr << "Error while finding the inode" << endl;
+        return 1;
+    }
+    
+    u_int inum;
+    status = dirInode.Inode_Get_Inum(inum);
+    if (status > 0)
+    {
+        cerr << "Error while retrieving the inum" << endl;
+        return 1;
+    }
 
+    int offset;
     status = file.File_Read(inum, offset, length, buffer);
     if (status > 0)
     {
@@ -229,9 +242,9 @@ int Directory::Directory_file_write(u_int inum, void* buffer, u_int offset, u_in
 
 int Directory::Directory_file_read(u_int inum, void* buffer, u_int offset, u_int length)
 {
-    if (inum < 2)
+    if (inum < sizeof(Inode::Container))
     {
-        std::cerr << "Invalid inum passed to Directory file read" << std::endl;
+        std::cerr << "Invalid inum passed to Directory_file_read " << inum << std::endl;
         return 1;
     }
 
@@ -240,7 +253,7 @@ int Directory::Directory_file_read(u_int inum, void* buffer, u_int offset, u_int
 
     if (status > 0)
     {
-        std::cerr < "There was an error while reading a file in Directory read" << std::endl;
+        std::cerr < "There was an error while reading a file in Directory_file_read" << std::endl;
         return 1;
     }
 
