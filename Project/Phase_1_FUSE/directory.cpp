@@ -36,7 +36,7 @@ int Directory::Directory_initialization()
     u_int inum = INUMOFROOTDIR; // Always zero(0)
     if (inum != 0)
     {
-        cerr << "Invalid inum for the root directory" << endl;
+        std::cerr << "Invalid inum for the root directory" << std::endl;
         return 1;
     }
 
@@ -78,7 +78,7 @@ int Directory::Directory_initialization()
  *
  *********************************************************************
  */
-int Directory_create(const char* path, const char* dirname, mode_t mode, mode_t type, u_int inum)
+int Directory::Directory_create(const char* path, const char* dirname, mode_t mode, mode_t type, u_int inum)
 {
     Inode inode;                // Inode for the new file
     DirMap cur_directory;       // "."
@@ -137,17 +137,17 @@ int Directory_create(const char* path, const char* dirname, mode_t mode, mode_t 
  * into the passed buffer.
  *********************************************************************
  */
-int Directory_read(const char* path, const char* dirname, int length, void* buffer)
+int Directory::Directory_read(const char* path, const char* dirname, int length, void* buffer)
 {
     int status = 0;
     Inode dirInode;
     File file;
 
     // Find the inode of the target directory with its path and name
-    status = dirInode.Inode_Find_Inode(dirname, path, dirInode);
+    status = dirInode.Inode_Find_Inode(dirname, path, &dirInode);
     if (status > 0)
     {
-        cerr << "Error while finding the inode" << endl;
+        std::cerr << "Error while finding the inode" << std::endl;
         return 1;
     }
     
@@ -155,7 +155,7 @@ int Directory_read(const char* path, const char* dirname, int length, void* buff
     status = dirInode.Inode_Get_Inum(inum);
     if (status > 0)
     {
-        cerr << "Error while retrieving the inum" << endl;
+        std::cerr << "Error while retrieving the inum" << std::endl;
         return 1;
     }
 
@@ -163,7 +163,7 @@ int Directory_read(const char* path, const char* dirname, int length, void* buff
     status = file.File_Read(inum, offset, length, buffer);
     if (status > 0)
     {
-        cerr << "Error while reading the file" << endl;
+        std::cerr << "Error while reading the file" << std::endl;
         return 1;
     }
 
@@ -193,11 +193,11 @@ int Directory_read(const char* path, const char* dirname, int length, void* buff
  */
 int Directory::Directory_file_create (const char* path, const char* filename, u_int filesize, int mode, int type, u_int inum)
 {
-    Inode new_Inode; // Inode for the new file
+    Inode new_inode; // Inode for the new file
     File new_file;
 
     // Create a file. If successful, inode should be initialized with empty direct pointers
-    if (new_file.File_Create(new_inode, path, filename, inum, filesize, mode, type))
+    if (new_file.File_Create(&new_inode, path, filename, inum, filesize, mode, type))
     {
         std::cerr << "File create failed in Directory file creation" << std::endl;
         return 1;
@@ -207,9 +207,9 @@ int Directory::Directory_file_create (const char* path, const char* filename, u_
     // inode_of_ifile, so it can be accessed in the log layer.
     // Else, store it to the globally accessible inode_of_current_file object for the log layer, again.
     if (filename == ".ifile")
-        inode_of_ifile = inode;
+        inode_of_ifile = new_inode;
     else
-        inode_of_current_file = inode;
+        inode_of_current_file = new_inode;
 
     return 0;
 }
@@ -253,7 +253,7 @@ int Directory::Directory_file_read(u_int inum, void* buffer, u_int offset, u_int
 
     if (status > 0)
     {
-        std::cerr < "There was an error while reading a file in Directory_file_read" << std::endl;
+        std::cerr << "Error while reading a file in Directory_file_read" << std::endl;
         return 1;
     }
 

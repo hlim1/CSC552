@@ -32,7 +32,7 @@
  *
  *********************************************************************
  */
-int File::File_Create (Inode* inode, const char* path, const char* filename, u_int inum, u_int filesize, int mode, int type)
+int File::File_Create (Inode* inode, const char* path, const char* filename, u_int inum, u_int filesize, mode_t mode, mode_t type)
 {
     time_t cur_time;
     time(&cur_time);

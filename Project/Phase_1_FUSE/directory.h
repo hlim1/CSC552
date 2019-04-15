@@ -19,7 +19,7 @@
 #include <sys/stat.h>
 
 #include "file.h"
-#include "Inode.h"
+#include "inode.h"
 
 typedef struct DirMap
 {
@@ -40,8 +40,8 @@ class Directory
     public:
         Directory() {}; // Defualt constructor
         int Directory_initialization();
-        int Directory_create(const char* path, const char* dirname, int mode, int type, u_int inum);    // Creates a new directory (special type) file
-        int Directory_read(const char* path, const char* dirname, void* buffer);                                             // Reads contents of directory file
+        int Directory_create(const char* path, const char* dirname, mode_t mode, mode_t type, u_int inum);    // Creates a new directory (special type) file
+        int Directory_read(const char* path, const char* dirname, int length, void* buffer);                                             // Reads contents of directory file
         int Directory_write(u_int inum, void* buffer, u_int offset, u_int length);                      // Writes a new file(s) into directory file
         int Directory_Free(u_int inum);                                                                 // 
 

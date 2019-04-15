@@ -29,7 +29,7 @@ class File
 {
     public:
         File() {};  // Default constructor
-        int File_Create(Inode* inode, const char* path, const char* filename, u_int inum, u_int filesize, int mode, int type);
+        int File_Create(Inode* inode, const char* path, const char* filename, u_int inum, u_int filesize, mode_t mode, mode_t type);
         int File_Write(u_int inum, u_int offset, u_int length, void* buffer);
         int File_Read(u_int inum, u_int offset, u_int length, void* buffer);
         int File_Free(u_int inum);
