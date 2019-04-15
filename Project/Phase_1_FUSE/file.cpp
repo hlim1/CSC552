@@ -32,13 +32,13 @@
  *
  *********************************************************************
  */
-int File_Create (Inode* inode, const char* path, const char* filename, u_int inum, u_int filesize, int mode, int type)
+int File::File_Create (Inode* inode, const char* path, const char* filename, u_int inum, u_int filesize, int mode, int type)
 {
     time_t cur_time;
     time(&cur_time);
 
     // Initialize the inode
-    int status = inode.Inode_Initialization(filename, path, inum, cur_time, filesize, mode, type);
+    int status = inode->Inode_Initialization(filename, path, inum, cur_time, filesize, mode, type);
     if (status)
     {
         std::cerr << "File Create failed" << std::endl;
@@ -69,7 +69,7 @@ int File_Create (Inode* inode, const char* path, const char* filename, u_int inu
  *
  *********************************************************************
  */
-int File_Write(u_int inum, u_int offset, u_int length, void* buffer)
+int File::File_Write(u_int inum, u_int offset, u_int length, void* buffer)
 {
     LogAddress* logAddress;
     // Passing 0 for the block number as it needs only the first block address
@@ -87,7 +87,7 @@ int File_Write(u_int inum, u_int offset, u_int length, void* buffer)
     }
 
     Inode found_inode;
-    status = found_Inode.Inode_Getter(inum, offset, found_inode);
+    status = found_inode.Inode_Getter(inum, offset, &found_inode);
     if (status)
     {
         std::cerr << "Failed to get the target inode" << std::endl;
@@ -95,8 +95,8 @@ int File_Write(u_int inum, u_int offset, u_int length, void* buffer)
     }
 
     // Setting direct pointers of a file inode
-    int current_segment = logAddress.segment;
-    int current_block_addr = logAddress.block;;
+    int current_segment = logAddress->segment;
+    int current_block_addr = logAddress->block;
 
     int number_of_blocks = ceil(length / (FLASH_SECTOR_SIZE * superBlock.block_size));
 
@@ -124,24 +124,26 @@ int File_Write(u_int inum, u_int offset, u_int length, void* buffer)
  *
  * Parameters:
  *
- * u_int inum - inode number of a target inode that requires write
+ * u_int inum - inode number of a target inode that needs to be read
  * u_int offset - offset is the starting offset of the I/O in bytes
  * u_int length - the length of the I/O in bytes.
- * void* buffer -- buffer into which log is read
+ * void* buffer - buffer into which log is read
  *
  * Returns:
  *  0 on success, 1 otherwise
  *
- * File_Read calls Log_read with passing the empty buffer to be filled.
+ * File_Read calls Log_read with passing the empty buffer to be filled,
+ * which the Log_Read will fill in the buffer based on the "length"
+ * byte provided by the user mklfs -l <length> or the default of 32.
  *
  *********************************************************************
  */
-int File_Read(u_int inum, u_int offset, u_int length, void* buffer)
+int File::File_Read(u_int inum, u_int offset, u_int length, void* buffer)
 {
     int status = 0;
     // Find the target inode from the .ifile
     Inode found_inode;
-    status = found_Inode.Inode_Getter(inum, offset, found_inode);
+    status = found_inode.Inode_Getter(inum, offset, &found_inode);
     if (status)
     {
         std::cerr << "Failed to get the target inode" << std::endl;
@@ -151,8 +153,8 @@ int File_Read(u_int inum, u_int offset, u_int length, void* buffer)
     LogAddress logAddress;
 
     Block_Ptr dir_block_ptr[4];
-    std::list<Block_Ptr> ind_block_ptr
-    status = found_inode.Inode_Get_Block_Ptr(dir_block_ptr, ind_block_ptr);
+    std::list<Block_Ptr> ind_block_ptr;
+    status = found_inode.Inode_Get_Block_Ptr(found_inode, dir_block_ptr, ind_block_ptr);
 
     if (status == 1)
     {
@@ -167,17 +169,17 @@ int File_Read(u_int inum, u_int offset, u_int length, void* buffer)
         if (i < 4)
         {
             logAddress.segment = dir_block_ptr[i].segment;
-            logAddress.block = dir_ block_ptr[i].block;
+            logAddress.block = dir_block_ptr[i].block;
         }
         else
         {
             // Assign indirect pointers to the log address
-            std::<Block_Ptr>::iterator iter;
+            std::list<Block_Ptr>::iterator iter;
             for (iter = ind_block_ptr.begin(); iter != ind_block_ptr.end(); iter++)
             {
                 Block_Ptr ind_ptr;
-                logAddress.segment = iter.segment;
-                logAddress.block = iter.block;
+                logAddress.segment = iter->segment;
+                logAddress.block = iter->block;
             }
         }
         status = Log_Read(logAddress, length, buffer);
@@ -189,12 +191,27 @@ int File_Read(u_int inum, u_int offset, u_int length, void* buffer)
     }
 
     // Update the last access time of the file
-    found_inode.Inode_Update_Last_Access_Time();
+    status = found_inode.Inode_Update_Last_Access();
 
     return 0;
 }
 
-void File_Free(u_int inum)
+/*
+ *********************************************************************
+ * int
+ * File_Free
+ *
+ * Parameters:
+ *
+ * u_int inum - inode number of a target inode that requires cleaning
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ *
+ *********************************************************************
+ */
+int File::File_Free(u_int inum)
 {
 
 }
