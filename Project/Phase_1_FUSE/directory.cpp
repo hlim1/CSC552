@@ -1,12 +1,3 @@
-/*
- *  Filename: directory.cpp
- *  Course: CSs 552 Advanced Operating Systems
- *  Last modified: 3/12/2019
- *  Author: Terrence Lim
- *  Summary:
- */
-
-#include <assert.h>
 #include "directory.h"
 
 /*
@@ -126,6 +117,7 @@ int Directory::Directory_create(const char* path, const char* dirname, mode_t mo
  *
  * Parameters:
  * const char* path - directory path
+ * int length - Length of bytes to read
  * void* buffer - The directory entries will be passed and stored in
  *                this buffer
  *
@@ -137,11 +129,13 @@ int Directory::Directory_create(const char* path, const char* dirname, mode_t mo
  * into the passed buffer.
  *********************************************************************
  */
-int Directory::Directory_read(const char* path, const char* dirname, int length, void* buffer)
+int Directory::Directory_read(const char* path, int length, void* buffer)
 {
     int status = 0;
     Inode dirInode;
     File file;
+
+    char* dirname = basename(path);
 
     // Find the inode of the target directory with its path and name
     status = dirInode.Inode_Find_Inode(dirname, path, &dirInode);
@@ -168,6 +162,76 @@ int Directory::Directory_read(const char* path, const char* dirname, int length,
     }
 
     return 0;
+}
+
+/*
+ *********************************************************************
+ * int
+ * Directory_write
+ *
+ * Parameters:
+ * const char* path - a path to the directory
+ * void* buffer - a buffer that needs to write into
+ * u_int offset - an offset of an inode in the ifile
+ * u_int length - a length of bytes to write into the buffer
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * When a file or directory gets opened and modified in the
+ * directory, this function will call the file_write to update the
+ * inode of the current directory.
+ *********************************************************************
+ */
+int Directory::Directory_write(const char* path, void* buffer, u_int offset, u_int length)
+{
+    char* dirname = basename(path); 
+
+    Inode inode;
+    int status = inode.Inode_Find_Inode(dirname, path, inode);
+    if (status > 0)
+    {
+         std::cerr << "Error while retrieving an inode in the Directory_write" << std::endl;
+         return 1;
+    }
+
+    int inum;
+    status = inode.Inode_Get_Inum(inum);
+    if (status > 0)
+    {
+        std::cerr << "Error while retrieving the inum of an inode in the Directory_write" << std::endl;
+        return 1;
+    }
+
+    File file;
+    status = file.File_Read(inum, offset, length, buffer);
+    if (status > 0)
+    {
+        std::cerr << "Error while reading a file in the Directory_write" << std::endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+/*
+ *********************************************************************
+ * int
+ * Directory_free
+ *
+ * Parameters:
+ * u_int inum - inode number of the directory
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * When the directory gets deleted, we need to free up the occupied
+ * segement
+ *********************************************************************
+ */
+int Directory::Directory_free(const char* path)
+{
+
 }
 
 /*
@@ -219,15 +283,32 @@ int Directory::Directory_file_create (const char* path, const char* filename, u_
  *  Direct_file_Write
  *  Given the inum of inode, it calls File_Write to initialize the inode's direct/indirect pointers.
  */
-int Directory::Directory_file_write(u_int inum, void* buffer, u_int offset, u_int length)
+int Directory::Directory_file_write(const char* path, void* buffer, u_int offset, u_int length)
 {
+    char* dirname = basename(path); 
+
+    Inode inode;
+    int status = inode.Inode_Find_Inode(dirname, path, inode);
+    if (status > 0)
+    {
+         std::cerr << "Error while retrieving an inode in the Directory_write" << std::endl;
+         return 1;
+    }
+
+    int inum;
+    status = inode.Inode_Get_Inum(inum);
+    if (status > 0)
+    {
+        std::cerr << "Error while retrieving the inum of an inode in the Directory_write" << std::endl;
+        return 1;
+    }
+
     if (inum < 2)
     {
         std::cerr << "Invalid inum passed to Directory file write" << std::endl;
         return 1;
     }
 
-    int status;
     File file;
     status = file.File_Write(inum, offset, length, buffer);
 
@@ -240,8 +321,32 @@ int Directory::Directory_file_write(u_int inum, void* buffer, u_int offset, u_in
     return 0;
 }
 
-int Directory::Directory_file_read(u_int inum, void* buffer, u_int offset, u_int length)
+int Directory::Directory_file_read(const char* path, void* buffer, u_int offset, u_int length)
 {
+    char* dirname = basename(path); 
+
+    Inode inode;
+    int status = inode.Inode_Find_Inode(dirname, path, inode);
+    if (status > 0)
+    {
+         std::cerr << "Error while retrieving an inode in the Directory_write" << std::endl;
+         return 1;
+    }
+
+    int inum;
+    status = inode.Inode_Get_Inum(inum);
+    if (status > 0)
+    {
+        std::cerr << "Error while retrieving the inum of an inode in the Directory_write" << std::endl;
+        return 1;
+    }
+
+    if (inum < 2)
+    {
+        std::cerr << "Invalid inum passed to Directory file write" << std::endl;
+        return 1;
+    }
+    
     if (inum < sizeof(Inode::Container))
     {
         std::cerr << "Invalid inum passed to Directory_file_read " << inum << std::endl;
@@ -249,8 +354,7 @@ int Directory::Directory_file_read(u_int inum, void* buffer, u_int offset, u_int
     }
 
     File file;
-    int status = file.File_Read(inum, offset, length, buffer);
-
+    status = file.File_Read(inum, offset, length, buffer);
     if (status > 0)
     {
         std::cerr << "Error while reading a file in Directory_file_read" << std::endl;
@@ -258,4 +362,9 @@ int Directory::Directory_file_read(u_int inum, void* buffer, u_int offset, u_int
     }
 
     return 0;
+}
+
+int Directory:;Directory_file_free(const char* path)
+{
+
 }
