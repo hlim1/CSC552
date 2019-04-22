@@ -291,7 +291,7 @@ int allocateSegmentCache() {
 // segment (retrieved from cache)
 
 // Flash can be read in whole number of sectors.
-// TODO: Ensure that the buffer has enough space to hold the sectors after 
+// Ensure that the buffer has enough space to hold the sectors after 
 // rounding up to the whole number of sectors.
 
 int readFromSegment(Segment *segment, LogAddress logAddress, u_int length, void *buffer){
@@ -308,15 +308,20 @@ int readFromSegment(Segment *segment, LogAddress logAddress, u_int length, void 
 	// calculate the number of sectors needed from the length 
 	// read count sectors from the flash
 
-	// TODO: Create the same buffer
+	// Note: Added protection here
+	void *tmpBuffer = malloc(ceil(length / FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
 
-	int rc = Flash_Read(flash, sector_offset, count, buffer);
+	// int rc = Flash_Read(flash, sector_offset, count, buffer);
+	int rc = Flash_Read(flash, sector_offset, count, tmpBuffer);
 
 	if(rc != 0){
 		cout << "Error reading logAddress: segment " << this_seg
 		<< ", block " << this_block << endl;  
 		return rc;
 	}
+
+	memcpy(buffer, tmpBuffer, length);
+	free (tmpBuffer);
 
 	return rc;
 }
