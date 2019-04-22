@@ -184,7 +184,7 @@ int Log_Read(LogAddress logAddress, u_int length, void *buffer){
 		}
 
 		// Assumption is that the memory for all the segment cache is initialized in the beginning
-		Segment *segment = &segmentCache[cacheIndexToLoad];
+		Segment *segment = &(segmentCache[cacheIndexToLoad]);
 		loadSegment(this_seg, segment);
 
 		lastLoadedCacheIndex = cacheIndexToLoad;
@@ -271,11 +271,11 @@ int allocateSegmentCache() {
 			exit(1);
 		}
 
-		SegSummary thisSegSummary = segmentCache[i].segSummary;
+		SegSummary* thisSegSummary = &(segmentCache[i].segSummary);
 
-		// thisSegSummary.blockInfos = (BlockInfo*) malloc(superBlock.segment_size * sizeof(BlockInfo));
-		thisSegSummary.blockInfos = (BlockInfo*) calloc(superBlock.segment_size, sizeof(BlockInfo));
-		if(thisSegSummary.blockInfos == NULL){
+		// thisSegSummary->blockInfos = (BlockInfo*) malloc(superBlock.segment_size * sizeof(BlockInfo));
+		thisSegSummary->blockInfos = (BlockInfo*) calloc(superBlock.segment_size, sizeof(BlockInfo));
+		if(thisSegSummary->blockInfos == NULL){
 			cout << "Memory allocation for segment cache failed" << endl;
 			exit(1);
 		}
@@ -307,6 +307,9 @@ int readFromSegment(Segment *segment, LogAddress logAddress, u_int length, void 
 
 	// calculate the number of sectors needed from the length 
 	// read count sectors from the flash
+
+	// TODO: Create the same buffer
+
 	int rc = Flash_Read(flash, sector_offset, count, buffer);
 
 	if(rc != 0){
@@ -373,7 +376,7 @@ int Log_Write(u_int inum, u_int block, u_int length, void *buffer, LogAddress *l
 		// write the tail segment to flash
 		// update the next segment field in the tail segment's summary
 		// initialize new tail segment
-		// set num used blocks in the tail to 0
+		// set num used blocks in the tail to 1
 		writeTailSegToFlash();
 
 		// write the remaining blocks to the new tail segment
@@ -385,6 +388,10 @@ int Log_Write(u_int inum, u_int block, u_int length, void *buffer, LogAddress *l
 		writeToTail(inum, block, rem_length, (char*)buffer + fit_length, &new_logAddress);
 		//  update num used blocks in the tail
 		numUsedBlocksInTail += remaining_blocks;
+
+		// TODO: Handle writes spanning 2 or more segments
+		// Run this in a loop instead of making it an if-check
+
 
 	} else {
 	
@@ -401,80 +408,77 @@ int Log_Write(u_int inum, u_int block, u_int length, void *buffer, LogAddress *l
 // update the next segment field in the tail segment's summary
 // write the tail segment to flash
 // initialize new tail segment
-// set num used blocks in the tail to 0
+// set num used blocks in the tail to 1
 int writeTailSegToFlash(){
 
 	// update the next segment field in the tail segment's summary
-	Segment tailSegment = segmentCache[tailSegIndex];
+	Segment *tailSegment = &(segmentCache[tailSegIndex]);
 	// set the next segment address to 1 plus the current segment address
 
-	u_int next_segment = tailSegment.segSummary.this_segment + 1;
-	tailSegment.segSummary.next = next_segment;
+	u_int next_segment = tailSegment->segSummary.this_segment + 1;
+	tailSegment->segSummary.next = next_segment;
 
 	// cout << next_segment << endl;
 
 	// TODO: Set the next segment address to the address returned by the segment cleaner
 	// It is the segment cleaner's job to provide the next available clean segment
-	// tailSegment.segSummary.next = segmentCleaner.getNext(tailSegment.segSummary.this_segment);
+	// tailSegment->segSummary.next = segmentCleaner.getNext(tailSegment->segSummary.this_segment);
 	
-	u_int this_segment = tailSegment.segSummary.this_segment;
+	u_int this_segment = tailSegment->segSummary.this_segment;
 
 	// cout << this_segment << endl;
 
 	// write the segment summary to the first block of segment or as needed by the size of 
 	// segment summary
-	SegSummary thisSegSummary = tailSegment.segSummary;
+	SegSummary *thisSegSummary = &(tailSegment->segSummary);
 
 	// cout << sizeof(SegSummary) << endl;
 	// cout << sizeof(BlockInfo) * superBlock.segment_size << endl;
 	// cout << "Num bytes in block " <<  num_bytes_in_block << endl;
 
 	// cout << "Before writing segment summary" << endl;
-	// cout << tailSegment.seg_bytes << " " << &thisSegSummary << endl;
+	// cout << tailSegment->seg_bytes << " " << thisSegSummary << endl;
 
-	memcpy(tailSegment.seg_bytes, &thisSegSummary, sizeof(SegSummary));
+	memcpy(tailSegment->seg_bytes, thisSegSummary, sizeof(SegSummary));
 	
-	cout << tailSegment.seg_bytes << endl;
-	cout << "PRINT HERE: " <<  (((char*)tailSegment.seg_bytes) + sizeof(SegSummary)) << endl;
+	// cout << tailSegment->seg_bytes << endl;
+	// cout << "PRINT HERE: " <<  (((char*)tailSegment->seg_bytes) + sizeof(SegSummary)) << endl;
 	
+	// if (((char*)tailSegment->seg_bytes) + sizeof(SegSummary) == NULL)
+ 	//        cerr << "ERROR HERE" << endl;
 
-    if (((char*)tailSegment.seg_bytes) + sizeof(SegSummary) == NULL)
-        cerr << "ERROR HERE" << endl;
+ 	//    if (thisSegSummary->blockInfos == NULL)
+ 	//        cerr << "thisSegSum" << endl;
 
-    if (thisSegSummary.blockInfos == NULL)
-        cerr << "thisSegSum" << endl;
-
-	memcpy(((char*)tailSegment.seg_bytes) + sizeof(SegSummary), thisSegSummary.blockInfos, 
+	memcpy(((char*)tailSegment->seg_bytes) + sizeof(SegSummary), thisSegSummary->blockInfos, 
 		sizeof(BlockInfo) * superBlock.segment_size);
-		
 	
-
-	cout << "After writing segment summary " << endl;
+	// cout << "After writing segment summary " << endl;
 
 	// write the tail segment to Flash
 	int rc = Flash_Write(flash, this_segment * num_sectors_in_segment, num_sectors_in_segment,
-		tailSegment.seg_bytes);
+		tailSegment->seg_bytes);
 	if(rc != 0){
 		cout << "Error writing tail segment " << this_segment << " to flash"<<endl;
 		return rc; 
 	}
 
 	// initialize new tail segment
-	memset(tailSegment.seg_bytes, 0, num_bytes_in_segment);
-	memset(thisSegSummary.blockInfos, 0, superBlock.segment_size * sizeof(BlockInfo));
-	thisSegSummary.this_segment = next_segment;
-	thisSegSummary.next = thisSegSummary.this_segment + 1;
+	memset(tailSegment->seg_bytes, 0, num_bytes_in_segment);
+	memset(thisSegSummary->blockInfos, 0, superBlock.segment_size * sizeof(BlockInfo));
+	thisSegSummary->this_segment = next_segment;
+	thisSegSummary->next = thisSegSummary->this_segment + 1;
 
-	// set num used blocks in the tail to 0
-	numUsedBlocksInTail = 0;
-
+	// set num used blocks in the tail to 1
+	// First block reserved for segment summary
+	numUsedBlocksInTail = 1;
 	
 	return 0;
 
 }
 
 
-// Writes length block in the tail segment and updates the segment summary for the blocks
+// Writes length bytes in the tail segment and updates the segment summary for the blocks
 // involved
 // Return 0 on success
 int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress *logAddress){
@@ -484,8 +488,8 @@ int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress 
 		buffer, length);
 
 	// update the logAddress with the address where the memory was written 
-	Segment tailSegment = segmentCache[tailSegIndex];
-	logAddress->segment = tailSegment.segSummary.this_segment;
+	Segment *tailSegment = &(segmentCache[tailSegIndex]);
+	logAddress->segment = tailSegment->segSummary.this_segment;
 	logAddress->block = numUsedBlocksInTail;
 
 	//update the segment summary for the blocks 
@@ -499,16 +503,16 @@ int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress 
 
 	// TODO: Check if inum is valid; If it is valid then this write is part of a file data write
 	// Set the type of the block (in segment summary) to file data type if the inum is valid
-	//
+	
 	int type = BLKTYPE_FILE;
 	if(inum == 0 && block == 0){
 		type = BLKTYPE_OTHER;
 	}
 
 	for(int i=start_block; i<=end_block; i++){
-		tailSegment.segSummary.blockInfos[i].inum = inum;
-		tailSegment.segSummary.blockInfos[i].block_offset = block;
-		tailSegment.segSummary.blockInfos[i].type = type;
+		tailSegment->segSummary.blockInfos[i].inum = inum;
+		tailSegment->segSummary.blockInfos[i].block_offset = block;
+		tailSegment->segSummary.blockInfos[i].type = type;
 	}
 
 	return 0;
@@ -608,7 +612,9 @@ int Log_Open(bool isFlashEmpty){
 
 	// The tail segment is always stored in the first position in the segment cache array
 	tailSegIndex = 0;
-	numUsedBlocksInTail = 0;
+
+	// Start writing from the 2nd block; 1st block is reserved for segment summary
+	numUsedBlocksInTail = 1;
 
 	if(!isFlashEmpty){
 		int latestIndex;
@@ -659,8 +665,8 @@ int Log_Close(){
 	// for each segment in the cache, deallocate memory
 	for(int i=0; i<NUM_SEGS_IN_CACHE; i++){
 		free(segmentCache[i].seg_bytes);
-		SegSummary thisSegSummary = segmentCache[i].segSummary;
-		free(thisSegSummary.blockInfos);
+		SegSummary *thisSegSummary = &(segmentCache[i].segSummary);
+		free(thisSegSummary->blockInfos);
 	}
 
 	free(segmentCache);
@@ -718,7 +724,8 @@ int writeCheckpoint(){
 	writeTailSegToFlash();
 
 	// update the superblock's cr address with the address of the checkpoint
-	superBlock.cr_addresses[indexToWrite] = cr_array[indexToWrite].lastSegmentAddress;
+	// superBlock.cr_addresses[indexToWrite] = cr_array[indexToWrite].lastSegmentAddress;
+	superBlock.cr_addresses[indexToWrite] = new_logAddress.segment;
 
 	// write the superblock in the first segment
 	length = sizeof(SuperBlock);
@@ -745,15 +752,34 @@ int loadCheckpoint(bool isFlashEmpty){
 	// read the contents of the superblock, and checkpoint information
 	// (which contains the inode of the ifile and the last written segment)
 		size_t length = sizeof(SuperBlock);
-		rc = Flash_Read(flash, 0, ceil(length/FLASH_SECTOR_SIZE), &superBlock);
+		
+		// TODO: Add protection here
+		// Since the flash reads in sectors instead of bytes, it may write 
+		// outside the memory allocated to superBlock which may create 
+		// tough bugs 
+
+		void *buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
+
+
+		//rc = Flash_Read(flash, 0, ceil(length/FLASH_SECTOR_SIZE), &superBlock);
+
+		rc = Flash_Read(flash, 0, ceil(length/FLASH_SECTOR_SIZE), buffer);
+		
+		memcpy(&superBlock, buffer, length);
+
 		if(rc != 0){
 			cout << "Error reading superblock from flash" << endl;
 			return rc;
 		}
 
+		free (buffer);
+
 		if(superBlock.cr_addresses[0]!=0){
 			// load into cr_array
 			length = sizeof(CR);
+
+			// TODO: Create the same buffer here
+
 			rc = Flash_Read(flash, superBlock.cr_addresses[0]*num_sectors_in_segment, 
 				ceil(length/FLASH_SECTOR_SIZE), &cr_array[0]);
 			if(rc != 0){
@@ -766,6 +792,9 @@ int loadCheckpoint(bool isFlashEmpty){
 		if(superBlock.cr_addresses[1]!=0){
 			// load into cr_array
 			length = sizeof(CR);
+
+			//TODO: Create the same buffer here
+
 			rc = Flash_Read(flash, superBlock.cr_addresses[1]*num_sectors_in_segment, 
 				ceil(length/FLASH_SECTOR_SIZE), &cr_array[1]);
 			if(rc != 0){
