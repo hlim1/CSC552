@@ -753,39 +753,43 @@ int loadCheckpoint(bool isFlashEmpty){
 	// (which contains the inode of the ifile and the last written segment)
 		size_t length = sizeof(SuperBlock);
 		
-		// TODO: Add protection here
-		// Since the flash reads in sectors instead of bytes, it may write 
-		// outside the memory allocated to superBlock which may create 
-		// tough bugs 
-
-		void *buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
-
+		// Note: Added protection here
+		// Since the flash reads in sectors instead of bytes, it may read more bytes than
+		// than the memory allocated in the buffer
+		
+		void *buffer;
+		buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
 
 		//rc = Flash_Read(flash, 0, ceil(length/FLASH_SECTOR_SIZE), &superBlock);
-
 		rc = Flash_Read(flash, 0, ceil(length/FLASH_SECTOR_SIZE), buffer);
 		
-		memcpy(&superBlock, buffer, length);
-
 		if(rc != 0){
 			cout << "Error reading superblock from flash" << endl;
 			return rc;
 		}
 
+		memcpy(&superBlock, buffer, length);
 		free (buffer);
 
 		if(superBlock.cr_addresses[0]!=0){
 			// load into cr_array
 			length = sizeof(CR);
 
-			// TODO: Create the same buffer here
+			// Note: Added protection here
+			buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
 
+			// rc = Flash_Read(flash, superBlock.cr_addresses[0]*num_sectors_in_segment, 
+				// ceil(length/FLASH_SECTOR_SIZE), &cr_array[0]);
 			rc = Flash_Read(flash, superBlock.cr_addresses[0]*num_sectors_in_segment, 
-				ceil(length/FLASH_SECTOR_SIZE), &cr_array[0]);
+				ceil(length/FLASH_SECTOR_SIZE), buffer);
+
 			if(rc != 0){
 				cout << "Error reading checkpoint 0 from flash" << endl;
 				return rc;
 			}
+
+			memcpy(&cr_array[0], buffer, length);
+			free(buffer);
 
 		}
 
@@ -793,14 +797,20 @@ int loadCheckpoint(bool isFlashEmpty){
 			// load into cr_array
 			length = sizeof(CR);
 
-			//TODO: Create the same buffer here
+			//NOTE: Added protection here
+			buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
 
+			// rc = Flash_Read(flash, superBlock.cr_addresses[1]*num_sectors_in_segment, 
+				// ceil(length/FLASH_SECTOR_SIZE), &cr_array[1]);
 			rc = Flash_Read(flash, superBlock.cr_addresses[1]*num_sectors_in_segment, 
-				ceil(length/FLASH_SECTOR_SIZE), &cr_array[1]);
+				ceil(length/FLASH_SECTOR_SIZE), buffer);
 			if(rc != 0){
 				cout << "Error reading checkpoint 1 from flash" << endl;
 				return rc;
 			}
+
+			memcpy(&cr_array[1], buffer, length);
+			free(buffer);
 		}
 
 	}	else {
