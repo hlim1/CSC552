@@ -1,7 +1,6 @@
 /*
  *  Filename: directory.h
  *  Course: CSs 552 Advanced Operating Systems
- *  Last modified: 4/15/2019
  *  Author: Terrence Lim
  *
  *  Summary: This is a implementation of the directory layer.
@@ -48,7 +47,7 @@ class Directory
         Directory() {}; // Defualt constructor
         int Directory_initialization();
         int Directory_create(const char* path, const char* dirname, mode_t mode, mode_t type, u_int inum);    // Creates a new directory (special type) file
-        int Directory_read(const char* path int length, void* buffer);                  // Reads contents of directory file
+        int Directory_read(const char* path, int length, void* buffer);                  // Reads contents of directory file
         int Directory_write(const char* path, void* buffer, u_int offset, u_int length);                            // Writes a new file(s) into directory file
         int Directory_free(const char* path);                                                              // 
 

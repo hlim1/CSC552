@@ -203,12 +203,13 @@ int File::File_Read(u_int inum, u_int offset, u_int length, void* buffer)
  *
  * Parameters:
  *
- * u_int inum - inode number of a target inode that requires cleaning
+ * u_int inum - inode number of the file
  *
  * Returns:
  *  0 on success, 1 otherwise
  *
- *
+ * When the file gets deleted, we need to free up the occupied 
+ * segments by the file inode
  *********************************************************************
  */
 int File::File_Free(u_int inum)

@@ -334,7 +334,7 @@ int Directory::Directory_file_read(const char* path, void* buffer, u_int offset,
     }
 
     int inum;
-    status = inode.Inode_Get_Inum(inum);
+    status = inode.Inode_Get_Inum(&inum);
     if (status > 0)
     {
         std::cerr << "Error while retrieving the inum of an inode in the Directory_write" << std::endl;
@@ -364,7 +364,7 @@ int Directory::Directory_file_read(const char* path, void* buffer, u_int offset,
     return 0;
 }
 
-int Directory:;Directory_file_free(const char* path)
+int Directory::Directory_file_free(const char* path)
 {
 
 }

@@ -18,6 +18,7 @@
 // C std. libraries list under here:
 #include <time.h>
 #include <math.h>
+#include <sys/stat.h>
 
 // Class header files list under here:
 #include "inode.h"
