@@ -25,28 +25,51 @@
 class Fuse_Implement {
     public:
         Fuse_Implement();
-        int file_getattr(const char* path, struct stat*);
-        int file_readline(const char* path, void* buffer, int length, off_t offset, struct fuse_file_info* fi);
-        int unlink(const char* path);
-        int rmdir(const char* path);
-        int file_open(const char* path, struct fuse_file_info* fi);
-        int file_read(const char* path, char* buffer, int length, off_t offset, struct fuse_file_info* fi);
-        int file_write(const char* path, void* buffer, off_t offset, int length, struct fuse_file_info *);
-        int statfs(const char* path, struct statvfs* stbuf);
-        int file_release(const char* path, struct statvfs* stbuf);
-        int mkdir(const char* path, mode_t mode);
-        int dir_open(const char* path, struct fuse_file_info* fi);
-        int dir_read(const char* path, void* buffer, off_t offset, struct fuse_file_info* fi);
-        int dir_release(const char* path, struct fuse_file_info* fi);
-        int init(struct fuse_file_info* fi);
-        int destroy(void *private_data);
-        int file_create(const char* path, , const char* filename, mode_t mode, mode_t type, struct fuse_file_info* fi);
-        int link(const char* src_path, const char* dest_path);
-        int symlink(const char* src_path, const char* dest_path);
-        int truncate(const char* path, struct fuse_file_info* fi);
-        int rename(const char* path, const char* filename, );
-        int chmod(const char * path, mode_t mode, struct fuse_file_info *fi);
-        int chown(const char * path, uid_t uid, gid_t id, struct fuse_file_info *fi);
+        int imp_file_getattr(const char* path, struct stat*);
+        int imp_file_readline(const char* path, void* buffer, int length, off_t offset, struct fuse_file_info* fi);
+        int imp_unlink(const char* path);
+        int imp_rmdir(const char* path);
+        int imp_file_open(const char* path, struct fuse_file_info* fi);
+        int imp_file_read(const char* path, char* buffer, int length, off_t offset, struct fuse_file_info* fi);
+        int imp_file_write(const char* path, void* buffer, off_t offset, int length, struct fuse_file_info *);
+        int imp_statfs(const char* path, struct statvfs* stbuf);
+        int imp_file_release(const char* path, struct statvfs* stbuf);
+        int imp_mkdir(const char* path, mode_t mode);
+        int imp_dir_open(const char* path, struct fuse_file_info* fi);
+        int imp_dir_read(const char* path, void* buffer, off_t offset, struct fuse_file_info* fi);
+        int imp_dir_release(const char* path, struct fuse_file_info* fi);
+        int imp_init(struct fuse_file_info* fi);
+        int imp_destroy(void *private_data);
+        int imp_file_create(const char* path, , const char* filename, mode_t mode, mode_t type, struct fuse_file_info* fi);
+        int imp_link(const char* src_path, const char* dest_path);
+        int imp_symlink(const char* src_path, const char* dest_path);
+        int imp_truncate(const char* path, struct fuse_file_info* fi);
+        int imp_rename(const char* org_path, const char* new_path, unsigned int flags);
+        int imp_chmod(const char * path, mode_t mode, struct fuse_file_info *fi);
+        int imp_chown(const char * path, uid_t uid, gid_t id, struct fuse_file_info *fi);
+};
+
+static struct fuse_operations fuse_imp_oper = {
+    .init       =   imp_init,
+    .getattr    =   imp_file_getattr,
+    .readline   =   imp_file_readline,
+    .unlink     =   imp_unlink,
+    .rmdir      =   imp_rmdir,
+    .open       =   imp_file_open,
+    .opendir    =   imp_dir_open,
+    .read       =   imp_file_read,
+    .write      =   imp_file_write,
+    .statfs     =   imp_statfs,
+    .release    =   imp_file_release,
+    .releasedir =   imp_dir_release,
+    .destroy    =   imp_destroy,
+    .create     =   imp_file_create,
+    .link       =   imp_link,
+    .symlink    =   imp_symlink,
+    .truncate   =   imp_truncate,
+    .rename     =   imp_rename,
+    .chmod      =   imp_chmod,
+    .chown      =   imp_chown,
 };
 
 #endif
