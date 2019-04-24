@@ -26,6 +26,7 @@
 
 #include "file.h"
 #include "inode.h"
+#include "fuse.h"
 
 typedef struct DirMap
 {
@@ -44,16 +45,26 @@ const int INUMOFIFILE = sizeof(Inode::Container);
 class Directory
 {
     public:
-        Directory() {}; // Defualt constructor
-        int Directory_initialization();
-        int Directory_create(const char* path, const char* dirname, mode_t mode, mode_t type, u_int inum);    // Creates a new directory (special type) file
-        int Directory_read(const char* path, int length, void* buffer);                  // Reads contents of directory file
-        int Directory_write(const char* path, void* buffer, u_int offset, u_int length);                            // Writes a new file(s) into directory file
-        int Directory_free(const char* path);                                                              // 
+        Directory() {};
+        // Functions for directory
+        int Directory_initialization(struct fuse_conn_info* conn);
+        int Directory_create(const char* path, mode_t mode);
+        int Directory_open(const char* path, struct fuse_file_info* fi);
+        int Directory_read(const char* path, int length, void* buffer, fuse_fill_dir_t filler,
+                           off_t offset, struct fuse_file_info* fi);
+        int Directory_write(const char* path, void* buffer, u_int offset, u_int length);
+        int Directory_free(const char* path);
 
-        int Directory_file_create(const char* path, const char* filename, u_int filesize, int mode, int type, u_int inum);
-        int Directory_file_write(const char* path, void* buffer, u_int offset, u_int length);
-        int Directory_file_read(const char* path, void* buffer, u_int offset, u_int length);
+        int Directory_chmod(const char* path, mode_t mode, struct fuse_file_info* fi);
+        int Directory_chown(const char* path, uid_t uid, gid_t id, struct fuse_file_info *fi);
+
+        // Functions for file
+        int Directory_file_create(const char* path, mode_t mode, struct fuse_file_info* fi);
+        int Directory_file_open(const char* path, struct fuse_file_info* fi);
+        int Directory_file_write(const char* path, void* buffer, off_t offset, int length);
+        int Directory_file_read(const char* path, char* buffer, off_t offset, int length);
+        int Directory_file_truncate(const char* path, int size);
+        int Directory_file_rename(const char* org_path, const char* new_path);
         int Directory_file_free(const char* path);
 };
 
