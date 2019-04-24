@@ -1,5 +1,8 @@
 #include "directory.h"
 
+Inode inode_of_ifile = new Inode();
+Inode inode_of_current_file = new Inode();
+
 /*
  *********************************************************************
  * int
@@ -394,25 +397,25 @@ int Directory::Directory_file_read(const char* path, char* buffer, off_t offset,
 
 int Directory::Directory_file_truncate(const char* path, int size)
 {
-
+    return 0;
 }
 
 int Directory_file_rename(const char* org_path, const char* new_path)
 {
-
+    return 0;
 }
 
 int Directory::Directory_file_free(const char* path)
 {
-
+    return 0;
 }
 
 int Directory_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
 {
-
+    return 0;
 }
 
 int Directory_chown(const char* path, uid_t uid, gid_t id, struct fuse_file_info *fi)
 {
-
+    return 0;
 }
