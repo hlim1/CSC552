@@ -18,6 +18,9 @@
 // C std. libraries list under here:
 #include <time.h>
 #include <math.h>
+#include <sys/stat.h>
+#include <libgen.h>
+#include <string.h>
 
 // Class header files list under here:
 #include "inode.h"
@@ -29,9 +32,10 @@ class File
 {
     public:
         File() {};  // Default constructor
-        int File_Create(Inode* inode, const char* path, const char* filename, u_int inum, u_int filesize, mode_t mode, mode_t type);
-        int File_Write(u_int inum, u_int offset, u_int length, void* buffer);
-        int File_Read(u_int inum, u_int offset, u_int length, void* buffer);
+        int File_Create(Inode* inode, const char* path, const char* filename, u_int inum, int filesize, mode_t mode, mode_t type);
+        int File_Open(const char* path, Inode* inode);
+        int File_Write(u_int inum, off_t offset, int length, void* buffer);
+        int File_Read(u_int inum, off_t offset, int length, void* buffer);
         int File_Free(u_int inum);
 };
 

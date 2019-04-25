@@ -32,7 +32,7 @@
  *
  *********************************************************************
  */
-int File::File_Create (Inode* inode, const char* path, const char* filename, u_int inum, u_int filesize, mode_t mode, mode_t type)
+int File::File_Create (Inode* inode, const char* path, const char* filename, u_int inum, int filesize, mode_t mode, mode_t type)
 {
     time_t cur_time;
     time(&cur_time);
@@ -47,6 +47,22 @@ int File::File_Create (Inode* inode, const char* path, const char* filename, u_i
 
     return 0;
 }
+
+int File_Open(const char* path, Inode* inode)
+{
+    char* ch_path = strdup(path);
+    char* filename = basename(ch_path);
+
+    int status = Inode_Find_Inode(filename, path, &inode)     
+    if (status > 0)
+    {
+        std::cerr << "Error while finding the inode in File_Open" << std::endl;
+        return 1;
+    }
+
+    return 0;
+}
+
 
 /*
  *********************************************************************
@@ -69,7 +85,7 @@ int File::File_Create (Inode* inode, const char* path, const char* filename, u_i
  *
  *********************************************************************
  */
-int File::File_Write(u_int inum, u_int offset, u_int length, void* buffer)
+int File::File_Write(u_int inum, off_t offset, int length, void* buffer)
 {
     LogAddress* logAddress;
     // Passing 0 for the block number as it needs only the first block address
@@ -138,7 +154,7 @@ int File::File_Write(u_int inum, u_int offset, u_int length, void* buffer)
  *
  *********************************************************************
  */
-int File::File_Read(u_int inum, u_int offset, u_int length, void* buffer)
+int File::File_Read(u_int inum, off_t offset, int length, void* buffer)
 {
     int status = 0;
     // Find the target inode from the .ifile
@@ -203,12 +219,13 @@ int File::File_Read(u_int inum, u_int offset, u_int length, void* buffer)
  *
  * Parameters:
  *
- * u_int inum - inode number of a target inode that requires cleaning
+ * u_int inum - inode number of the file
  *
  * Returns:
  *  0 on success, 1 otherwise
  *
- *
+ * When the file gets deleted, we need to free up the occupied 
+ * segments by the file inode
  *********************************************************************
  */
 int File::File_Free(u_int inum)
