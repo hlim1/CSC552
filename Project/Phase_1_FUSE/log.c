@@ -55,6 +55,111 @@ u_int num_bytes_in_segment;
 u_int num_sectors_in_segment;
 u_int num_bytes_in_block;
 
+char *argv_0;
+
+// FUSE operation structure
+
+static struct fuse_operations lfs_oper {
+    .getattr = lfs_fileGetattr,
+    .readlink = lfs_ReadLink,
+    .getdir = NULL,
+    .mknod = NULL,
+    .mkdir = lfs_makeDirectory,
+    .unlink = lfs_Unlink,
+    .rmdir = lfs_Rmdir,
+    .symlink = lfs_SymLink,
+    .rename = lfs_Rename,
+    .link = lfs_HardLink,
+    .chmod = NULL,
+    .chown = NULL,
+    .truncate = lfs_Truncate,
+    .utime = NULL,
+    .open = lfs_fileOpen,
+    .read = lfs_directoryRead,
+    .write = lfs_directoryWrite,
+    .statfs = lfs_Statfs,
+    .flush = lfs_Flush,
+    .release = lfs_File_Release,
+    .fsync = NULL,
+    .setxattr = NULL,
+    .getxattr = NULL,
+    .listxattr = NULL,
+    .removexattr = NULL,
+    .opendir = lfs_Opendir,
+    .readdir = lfs_directoryReaddir,
+    .releasedir = NULL,
+    .fsyncdir = NULL,
+    .init = lfs_Initialize,
+    .destroy = lfs_Destroy,
+    .access = lfs_access,
+    .create = lfs_fileCreate,
+    .ftruncate = NULL,
+    .fgetattr = NULL,
+    .lock = NULL,
+    .utimens = NULL,
+    .bmap = NULL,
+    .flag_nullpath_ok = 0,
+    .flag_nopath = 0,
+    .flag_utime_omit_ok = 1,
+    .flag_reserved = 29,
+    .ioctl = NULL,
+    .poll = NULL,
+    .write_buf = NULL,
+    .read_buf = NULL,
+    .flock = NULL,
+    .fallocate = NULL,
+};
+
+/******** Default structure from tutorial *********/
+
+/*
+static struct fuse_operations prefix_oper = {
+    .init        = prefix_init,
+    .destroy     = prefix_destroy,
+    .getattr     = prefix_getattr,
+    .fgetattr    = prefix_fgetattr,
+    .access      = prefix_access,
+    .readlink    = prefix_readlink,
+    .readdir     = prefix_readdir,
+    .mknod       = prefix_mknod,
+    .mkdir       = prefix_mkdir,
+    .symlink     = prefix_symlink,
+    .unlink      = prefix_unlink,
+    .rmdir       = prefix_rmdir,
+    .rename      = prefix_rename,
+    .link        = prefix_link,
+    .chmod       = prefix_chmod,
+    .chown       = prefix_chown,
+    .truncate    = prefix_truncate,
+    .ftruncate   = prefix_ftruncate,
+    .utimens     = prefix_utimens,
+    .create      = prefix_create,
+    .open        = prefix_open,
+    .read        = prefix_read,
+    .write       = prefix_write,
+    .statfs      = prefix_statfs,
+    .release     = prefix_release,
+    .opendir     = prefix_opendir,
+    .releasedir  = prefix_releasedir,
+    .fsync       = prefix_fsync,
+    .flush       = prefix_flush,
+    .fsyncdir    = prefix_fsyncdir,
+    .lock        = prefix_lock,
+    .bmap        = prefix_bmap,
+    .ioctl       = prefix_ioctl,
+    .poll        = prefix_poll,
+#ifdef HAVE_SETXATTR
+    .setxattr    = prefix_setxattr,
+    .getxattr    = prefix_getxattr,
+    .listxattr   = prefix_listxattr,
+    .removexattr = prefix_removexattr,
+#endif
+    .flag_nullpath_ok = 0,                
+};
+
+*/ 
+
+
 // This function initializes the log structure and is called by mklfs
 // Returns 0 on success, 1 otherwise
 
@@ -647,7 +752,25 @@ int Log_Open(bool isFlashEmpty){
 
 	// cout << segmentCache[tailSegIndex].segSummary.this_segment << endl;
 
-	return rc;
+	if(isFlashEmpty){
+		 return rc;
+	}	
+
+	// Preparing FUSE arguments 
+
+    char 	**nargv = NULL;
+    int     nargc;
+    nargc = 5;
+
+    nargv = (char **) malloc(nargc * sizeof(char*));
+    nargv[0] = argv_0;
+    nargv[1] = "-f";
+    nargv[2] = "-s";
+    nargv[3] = "-d";
+    nargv[4] = mountpoint;
+
+    return fuse_main(nargc, nargv, &lfs_oper, flash_filename);
+	
 
 }
 

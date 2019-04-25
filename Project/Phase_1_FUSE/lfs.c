@@ -1,3 +1,8 @@
+#ifndef FUSE_USE_VERSION
+#define FUSE_USE_VERSION 26
+#endif
+
+#include <fuse.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,6 +94,8 @@ int main(int argc, char *argv[]){
     cout << "stop: " << clean_stop_threshold<<endl;
     cout << flash_filename << endl;
     cout << mountpoint << endl;
+
+    argv_0 = argv[0];
 
     Log_Open();
 

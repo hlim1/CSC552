@@ -12,6 +12,12 @@
 #ifndef _LOG_H
 #define _LOG_H
 
+#ifndef FUSE_USE_VERSION
+#define FUSE_USE_VERSION 26
+#endif
+
+#include <fuse.h>
+
 #include "flash.h"
 // #include "file.h"
 #include <ctime>
@@ -305,5 +311,8 @@ int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress 
 int writeCheckpoint();
 int loadCheckpoint(bool isFlashEmpty=false);
 
+
+
+extern char *argv_0;
 
 #endif
