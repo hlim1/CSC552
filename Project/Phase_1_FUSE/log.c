@@ -2,10 +2,11 @@
 #include <math.h>
 
 #include "log.h"
+#include "fuse_implement.h"
 
 using namespace std;
 
-// #include "directory.h"
+#include "directory.h"
 // #include "file.h"
 
 // Global Definitions
@@ -59,6 +60,7 @@ char *argv_0;
 
 // FUSE operation structure
 
+/*
 static struct fuse_operations lfs_oper {
     .getattr = lfs_fileGetattr,
     .readlink = lfs_ReadLink,
@@ -109,6 +111,7 @@ static struct fuse_operations lfs_oper {
     .flock = NULL,
     .fallocate = NULL,
 };
+*/
 
 /******** Default structure from tutorial *********/
 
@@ -203,6 +206,7 @@ int Log_Create(){
 	// '.', '..', and '.ifile' entries.
 
 	// directory.Create();	//EDIT
+	Directory::Directory_initialization(NULL);
 
 	rc = Log_Close();
 	
@@ -769,7 +773,7 @@ int Log_Open(bool isFlashEmpty){
     nargv[3] = "-d";
     nargv[4] = mountpoint;
 
-    return fuse_main(nargc, nargv, &lfs_oper, flash_filename);
+    return fuse_main(nargc, nargv, &fuse_imp_oper, flash_filename);
 	
 
 }
