@@ -17,7 +17,7 @@
 #include <string>
 
 // Class header files list under here:
-#include "ionde.h"
+#include "inode.h"
 #include "file.h"
 #include "directory.h"
 
