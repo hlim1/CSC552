@@ -27,7 +27,7 @@ Inode inode_of_current_file = new Inode();
  * own inum.
  *********************************************************************
  */
-int Directory::Directory_initialization(struct fuse_conn_info* conn)
+int Directory::Directory_initialization()
 {
     int status = 0; // 0 is success and > 0 is fail
 
@@ -130,7 +130,7 @@ int Directory_open(const char* path, struct fuse_file_info* fi)
 /*
  *********************************************************************
  * int
- * Directory_Read
+ * Directory_read
  *
  * Parameters:
  * const char* path - directory path
@@ -146,7 +146,7 @@ int Directory_open(const char* path, struct fuse_file_info* fi)
  * into the passed buffer.
  *********************************************************************
  */
-int Directory::Directory_read(const char* path, int length, void* buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
+int Directory::Directory_read(const char* path, void* buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
 {
     int status = 0;
     Inode dirInode;
@@ -170,13 +170,7 @@ int Directory::Directory_read(const char* path, int length, void* buffer, fuse_f
         return 1;
     }
 
-    int offset;
-    status = file.File_Read(inum, offset, length, buffer);
-    if (status > 0)
-    {
-        std::cerr << "Error while reading the file" << std::endl;
-        return 1;
-    }
+    
 
     return 0;
 }
@@ -200,7 +194,7 @@ int Directory::Directory_read(const char* path, int length, void* buffer, fuse_f
  * inode of the current directory.
  *********************************************************************
  */
-int Directory::Directory_write(const char* path, void* buffer, u_int offset, u_int length)
+int Directory::Directory_write(const char* path, void* buffer, off_t offset, size_t length)
 {
     char* dirname = basename(path); 
 
@@ -318,7 +312,7 @@ int Directory_file_open(const char* path, struct fuse_file_info* fi)
  *  Direct_file_Write
  *  Given the inum of inode, it calls File_Write to initialize the inode's direct/indirect pointers.
  */
-int Directory::Directory_file_write(const char* path, void* buffer, off_t offset, int length)
+int Directory::Directory_file_write(const char* path, void* buffer, off_t offset, size_t length)
 {
     char* dirname = basename(path); 
 
@@ -356,7 +350,7 @@ int Directory::Directory_file_write(const char* path, void* buffer, off_t offset
     return 0;
 }
 
-int Directory::Directory_file_read(const char* path, char* buffer, off_t offset, int length)
+int Directory::Directory_file_read(const char* path, char* buffer, off_t offset, size_t length)
 {
     char* dirname = basename(path); 
 
@@ -414,12 +408,12 @@ int Directory::Directory_file_free(const char* path)
     return 0;
 }
 
-int Directory_chmod(const char* path, mode_t mode, struct fuse_file_info* fi)
+int Directory_chmod(const char* path, mode_t mode)
 {
     return 0;
 }
 
-int Directory_chown(const char* path, uid_t uid, gid_t id, struct fuse_file_info *fi)
+int Directory_chown(const char* path, uid_t uid, gid_t id)
 {
     return 0;
 }
