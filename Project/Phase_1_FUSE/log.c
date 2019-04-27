@@ -936,39 +936,45 @@ int loadCheckpoint(bool isFlashEmpty){
 			memcpy(&cr_array[0], buffer, length);
 			free(buffer);
 
-			// Load the inode of the ifile
-			logAddress = cr_array[0].inode_ifile_address;
-			length = sizeof(Inode.Container);
-			
-			// Note: Added protection here
-			buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
+			if(cr_array[0].write_time > cr_array[1].write_time){
+				// Load the inode of the ifile
+				logAddress = cr_array[0].inode_ifile_address;
+				length = sizeof(Inode.Container);
+				
+				// Note: Added protection here
+				buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
 
-			sector_offset = logAddress.segment * num_sectors_in_segment 
-				+ logAddress.block * superBlock.block_size;
+				sector_offset = logAddress.segment * num_sectors_in_segment 
+					+ logAddress.block * superBlock.block_size;
 
-			rc = Flash_Read(flash, sector_offset,
-				ceil(length/FLASH_SECTOR_SIZE), buffer);
+				rc = Flash_Read(flash, sector_offset,
+					ceil(length/FLASH_SECTOR_SIZE), buffer);
 
-			if(rc != 0){
-				cout << "Error reading inode of ifile from flash" << endl;
-				return rc;
+				if(rc != 0){
+					cout << "Error reading inode of ifile from flash" << endl;
+					return rc;
+				}
+
+				memcpy(&(inode_of_ifile.container), buffer, length);
+				free(buffer);
 			}
-
-			memcpy(&(inode_of_ifile.container), buffer, length);
-			free(buffer);
 
 		}
 
 		if(superBlock.cr_addresses[1].segment!=-1){
 			// load into cr_array
 			length = sizeof(CR);
+			logAddress = superBlock.cr_addresses[1];
+
+			u_int sector_offset = logAddress.segment * num_sectors_in_segment 
+				+ logAddress.block * superBlock.block_size;
 
 			//NOTE: Added protection here
 			buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
 
 			// rc = Flash_Read(flash, superBlock.cr_addresses[1]*num_sectors_in_segment, 
 				// ceil(length/FLASH_SECTOR_SIZE), &cr_array[1]);
-			rc = Flash_Read(flash, superBlock.cr_addresses[1]*num_sectors_in_segment, 
+			rc = Flash_Read(flash, sector_offset, 
 				ceil(length/FLASH_SECTOR_SIZE), buffer);
 			if(rc != 0){
 				cout << "Error reading checkpoint 1 from flash" << endl;
@@ -977,6 +983,30 @@ int loadCheckpoint(bool isFlashEmpty){
 
 			memcpy(&cr_array[1], buffer, length);
 			free(buffer);
+
+			// This is the more recent checkpoint
+			if(cr_array[1].write_time > cr_array[0].write_time){
+				// Load the inode of the ifile
+				logAddress = cr_array[1].inode_ifile_address;
+				length = sizeof(Inode.Container);
+				
+				// Note: Added protection here
+				buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
+
+				sector_offset = logAddress.segment * num_sectors_in_segment 
+					+ logAddress.block * superBlock.block_size;
+
+				rc = Flash_Read(flash, sector_offset,
+					ceil(length/FLASH_SECTOR_SIZE), buffer);
+
+				if(rc != 0){
+					cout << "Error reading inode of ifile from flash" << endl;
+					return rc;
+				}
+
+				memcpy(&(inode_of_ifile.container), buffer, length);
+				free(buffer);
+			}
 		}
 
 	}	else {
