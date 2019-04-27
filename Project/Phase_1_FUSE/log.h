@@ -117,7 +117,9 @@ typedef struct SuperBlock {
 	u_int wearLimit;	// wear limit of erase blocks
 	// CR cr;				// checkpoint region
 
-	u_int cr_addresses[2]; // Since the checkpoint needs to be updated with each file write,
+	// u_int cr_addresses[2];
+	LogAddress cr_addresses[2];
+	 					// Since the checkpoint needs to be updated with each file write,
 						// this cannot be stored in the starting segments. It will increase
 						// the wear level of the blocks. The checkpoint regions also need
 						// to be stored at the tail of the log but the segments containing
@@ -174,6 +176,9 @@ typedef struct CR {
 
 	// inode ifile_inode;	//EDIT: the inode of the ifile 
 	// NOTE: The ifile also needs to be written during checkpointing
+
+	// Instead of storing the inode in the checkpoint, it stores the block address 
+	LogAddress inode_ifile_address;
 
 	u_int segUsgTblAddress;	// the address of segment usage table
 	time_t write_time;	// time of creating the checkpoint 

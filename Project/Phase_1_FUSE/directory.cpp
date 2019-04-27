@@ -1,5 +1,9 @@
 #include "directory.h"
 
+/*** Edit by Sabin ***/
+ Directory dir;
+/*** End Edit ***/ 
+
 Inode inode_of_ifile = new Inode();
 Inode inode_of_current_file = new Inode();
 

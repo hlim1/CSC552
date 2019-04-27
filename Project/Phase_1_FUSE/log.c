@@ -205,8 +205,8 @@ int Log_Create(){
 	// Create an empty filesystem which contains only the root directory and the
 	// '.', '..', and '.ifile' entries.
 
-	// directory.Create();	//EDIT
-	Directory::Directory_initialization(NULL);
+	// Directory::Directory_initialization(NULL);	//EDIT
+	dir.Directory_initialization(NULL);
 
 	rc = Log_Close();
 	
@@ -814,7 +814,8 @@ int Log_Close(){
 }
 
 // This function writes the checkpoint to the flash i.e the checkpoint region and updates the address of 
-// the checkpoint region in the superblock. 
+// the checkpoint region in the superblock.
+// Also writes the inode of ifile when writing the checkpoint 
 
 // Returns 0 on success, 1 otherwise
 int writeCheckpoint(){
@@ -824,31 +825,36 @@ int writeCheckpoint(){
 	// write the current tail segment to flash
 	writeTailSegToFlash();
 
-	// cout << "After writing tail to Flash" << endl;
-
 	// prepare the checkpoint and write it to flash on the new segment
 
 	// alternate between the two checkpoints (0 and 1)
 	u_int indexToWrite = last_CR_index+1;
 	if(indexToWrite == 2){ indexToWrite = 0;}
 
+	size_t length = sizeof(Inode.Container);
+
+	LogAddress new_logAddress1;
+	int num_blocks = ceil(length / (FLASH_SECTOR_SIZE * superBlock.block_size));
+	writeToTail(0, 0, length, &(inode_of_ifile.container), &new_logAddress1);
+	numUsedBlocksInTail += num_blocks;
+
 	cr_array[indexToWrite].write_time = time(0);
 	cr_array[indexToWrite].lastSegmentAddress = segmentCache[tailSegIndex].segSummary.this_segment;
 	// Setting this address to 0. When loading, treat this as an unassigned or invalid index
 	cr_array[indexToWrite].segUsgTblAddress = 0;
+	cr_array[indexToWrite].inode_ifile_address = new_logAddress1;
 
 	// write the checkpoint region in the tail segment 
-	size_t length = sizeof(CR);
+	length = sizeof(CR);
 	// void* checkpt_bytes = malloc(length);
 	// memcpy(checkpt_bytes, &cr_array[indexToWrite], length);
 
 	LogAddress new_logAddress;
-	int num_blocks = ceil(length / (FLASH_SECTOR_SIZE * superBlock.block_size));
+	num_blocks = ceil(length / (FLASH_SECTOR_SIZE * superBlock.block_size));
 	// writeToTail(0, 0, length, checkpt_bytes, &new_logAddress);
 	writeToTail(0, 0, length, &cr_array[indexToWrite], &new_logAddress);
 
 	// free (checkpt_bytes);
-
 	// update num used blocks in the tail
 	numUsedBlocksInTail += num_blocks;
 
@@ -857,7 +863,8 @@ int writeCheckpoint(){
 
 	// update the superblock's cr address with the address of the checkpoint
 	// superBlock.cr_addresses[indexToWrite] = cr_array[indexToWrite].lastSegmentAddress;
-	superBlock.cr_addresses[indexToWrite] = new_logAddress.segment;
+	// superBlock.cr_addresses[indexToWrite] = new_logAddress.segment;
+	superBlock.cr_addresses[indexToWrite] = new_logAddress;
 
 	// write the superblock in the first segment
 	length = sizeof(SuperBlock);
