@@ -22,39 +22,34 @@
 #include <sys/statvfs.h>
 
 // Class header files list under here:
-#include "fuse.h"
+#include <fuse.h>
 #include "directory.h"
 
 const int NOTSUPPORTED = -1;
 
-class Fuse_Implement {
+extern Directory* f_directory;
 
-    static Directory* directory;
-
-    public:
-        Fuse_Implement();
-        static int imp_init(struct fuse_conn_info *conn);
-        static int imp_file_getattr(const char* path, struct stat*);
-        static int imp_unlink(const char* path);
-        static int imp_rmdir(const char* path);
-        static int imp_file_open(const char* path, struct fuse_file_info* fi);
-        static int imp_file_read(const char* path, char* buffer, int length, off_t offset, struct fuse_file_info* fi);
-        static int imp_file_write(const char* path, void* buffer, off_t offset, int length, struct fuse_file_info *fi);
-        static int imp_statfs(const char* path, struct statvfs* stbuf);
-        static int imp_file_release(const char* path, struct fuse_file_info *fi);
-        static int imp_mkdir(const char* path, mode_t mode);
-        static int imp_dir_open(const char* path, struct fuse_file_info* fi);
-        static int imp_dir_read(const char* path, fuse_fill_dir_t filler, void* buffer, off_t offset, struct fuse_file_info* fi);
-        static int imp_dir_release(const char* path, struct fuse_file_info* fi);
-        static int imp_destroy(void *private_data);
-        static int imp_file_create(const char* path, mode_t mode, struct fuse_file_info* fi);
-        static int imp_link(const char* src_path, const char* dest_path);
-        static int imp_symlink(const char* src_path, const char* dest_path);
-        static int imp_truncate(const char* path, int size);
-        static int imp_rename(const char* org_path, const char* new_path, unsigned int flags);
-        static int imp_chmod(const char * path, mode_t mode, struct fuse_file_info *fi);
-        static int imp_chown(const char * path, uid_t uid, gid_t id, struct fuse_file_info *fi);
-};
+int imp_init(struct fuse_conn_info *conn);
+int imp_file_getattr(const char* path, struct stat*);
+int imp_unlink(const char* path);
+int imp_rmdir(const char* path);
+int imp_file_open(const char* path, struct fuse_file_info* fi);
+int imp_file_read(const char* path, char* buffer, int length, off_t offset, struct fuse_file_info* fi);
+int imp_file_write(const char* path, void* buffer, off_t offset, int length, struct fuse_file_info *fi);
+int imp_statfs(const char* path, struct statvfs* stbuf);
+int imp_file_release(const char* path, struct fuse_file_info *fi);
+int imp_mkdir(const char* path, mode_t mode);
+int imp_dir_open(const char* path, struct fuse_file_info* fi);
+int imp_dir_read(const char* path, fuse_fill_dir_t filler, void* buffer, off_t offset, struct fuse_file_info* fi);
+int imp_dir_release(const char* path, struct fuse_file_info* fi);
+int imp_destroy(void *private_data);
+int imp_file_create(const char* path, mode_t mode, struct fuse_file_info* fi);
+int imp_link(const char* src_path, const char* dest_path);
+int imp_symlink(const char* src_path, const char* dest_path);
+int imp_truncate(const char* path, int size);
+int imp_rename(const char* org_path, const char* new_path, unsigned int flags);
+int imp_chmod(const char * path, mode_t mode, struct fuse_file_info *fi);
+int imp_chown(const char * path, uid_t uid, gid_t id, struct fuse_file_info *fi);
 
 /*** Edit by Sabin ***/
 //extern Fuse_Implement fuse_implement;
