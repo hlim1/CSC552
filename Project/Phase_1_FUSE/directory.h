@@ -34,9 +34,7 @@ typedef struct DirMap
     u_int inum;
 } DirMap;
 
-/*** Edit by Sabin ***/
-extern Directory dir;
-/*** End Edit ***/ 
+
 
 // Extern variables
 extern std::list<DirMap> directory; // This holds the in-memory directory <name,inum> list
@@ -71,5 +69,9 @@ class Directory
         int Directory_file_rename(const char* org_path, const char* new_path);
         int Directory_file_free(const char* path);
 };
+
+/*** Edit by Sabin ***/
+extern Directory dir;
+/*** End Edit ***/ 
 
 #endif

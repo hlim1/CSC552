@@ -1,7 +1,7 @@
 CXX=g++
 # CXXFLAGS=-Wall -I.
 # CXXFLAGS = -Wall -g -I.
-CXXFLAGS = -Wall -g -I. -lfuse
+CXXFLAGS = -Wall -g -I. -lfuse -D_FILE_OFFSET_BITS=64
 
 DEPS = flash.h log.h directory.h file.h fuse_implement.h inode.h
 OBJ = flash.o log.o lfs.o mklfs.o directory.o file.o fuse_implement.o inode.o
