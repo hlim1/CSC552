@@ -910,16 +910,22 @@ int loadCheckpoint(bool isFlashEmpty){
 		memcpy(&superBlock, buffer, length);
 		free (buffer);
 
-		if(superBlock.cr_addresses[0]!=0){
+		LogAddress logAddress;
+
+		if(superBlock.cr_addresses[0].segment!=-1){
 			// load into cr_array
 			length = sizeof(CR);
+			logAddress = superBlock.cr_addresses[0];
 
 			// Note: Added protection here
 			buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
 
+			u_int sector_offset = logAddress.segment * num_sectors_in_segment 
+				+ logAddress.block * superBlock.block_size;
+
 			// rc = Flash_Read(flash, superBlock.cr_addresses[0]*num_sectors_in_segment, 
 				// ceil(length/FLASH_SECTOR_SIZE), &cr_array[0]);
-			rc = Flash_Read(flash, superBlock.cr_addresses[0]*num_sectors_in_segment, 
+			rc = Flash_Read(flash, sector_offset,
 				ceil(length/FLASH_SECTOR_SIZE), buffer);
 
 			if(rc != 0){
@@ -930,9 +936,30 @@ int loadCheckpoint(bool isFlashEmpty){
 			memcpy(&cr_array[0], buffer, length);
 			free(buffer);
 
+			// Load the inode of the ifile
+			logAddress = cr_array[0].inode_ifile_address;
+			length = sizeof(Inode.Container);
+			
+			// Note: Added protection here
+			buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
+
+			sector_offset = logAddress.segment * num_sectors_in_segment 
+				+ logAddress.block * superBlock.block_size;
+
+			rc = Flash_Read(flash, sector_offset,
+				ceil(length/FLASH_SECTOR_SIZE), buffer);
+
+			if(rc != 0){
+				cout << "Error reading inode of ifile from flash" << endl;
+				return rc;
+			}
+
+			memcpy(&(inode_of_ifile.container), buffer, length);
+			free(buffer);
+
 		}
 
-		if(superBlock.cr_addresses[1]!=0){
+		if(superBlock.cr_addresses[1].segment!=-1){
 			// load into cr_array
 			length = sizeof(CR);
 
@@ -955,8 +982,8 @@ int loadCheckpoint(bool isFlashEmpty){
 	}	else {
 		// This flash is freshly created
 		// clear the checkpoint addresses in the superblock
-		superBlock.cr_addresses[0] = 0;
-		superBlock.cr_addresses[1] = 0;
+		superBlock.cr_addresses[0] = {-1, -1};
+		superBlock.cr_addresses[1] = {-1, -1};
 
 		// clear the checkpoint regions
 		cr_array[0].write_time = 0;
