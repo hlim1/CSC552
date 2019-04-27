@@ -42,7 +42,6 @@ int imp_mkdir(const char* path, mode_t mode);
 int imp_dir_open(const char* path, struct fuse_file_info* fi);
 int imp_dir_read(const char* path, fuse_fill_dir_t filler, char* buffer, off_t offset, struct fuse_file_info* fi);
 int imp_dir_release(const char* path, struct fuse_file_info* fi);
-void imp_destroy(void *private_data);
 int imp_file_create(const char* path, mode_t mode, struct fuse_file_info* fi);
 int imp_link(const char* src_path, const char* dest_path);
 int imp_symlink(const char* src_path, const char* dest_path);
@@ -50,6 +49,7 @@ int imp_truncate(const char* path, size_t length);
 int imp_rename(const char* org_path, const char* new_path);
 int imp_chmod(const char * path, mode_t mode);
 int imp_chown(const char * path, uid_t uid, gid_t id);
+void imp_destroy(void *private_data);
 
 /*** Edit by Sabin ***/
 //extern Fuse_Implement fuse_implement;
