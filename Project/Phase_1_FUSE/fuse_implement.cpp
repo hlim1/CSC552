@@ -2,6 +2,86 @@
 
 Directory* f_directory;
 
+/*
+// static struct fuse_operations lfs_oper {
+static struct fuse_operations prefix_oper {
+    .getattr = lfs_fileGetattr,
+    .readlink = lfs_ReadLink,
+    .getdir = NULL,
+    .mknod = NULL,
+    .mkdir = lfs_makeDirectory,
+    .unlink = lfs_Unlink,
+    .rmdir = lfs_Rmdir,
+    .symlink = lfs_SymLink,
+    .rename = lfs_Rename,
+    .link = lfs_HardLink,
+    .chmod = NULL,
+    .chown = NULL,
+    .truncate = lfs_Truncate,
+    .utime = NULL,
+    .open = lfs_fileOpen,
+    .read = lfs_directoryRead,
+    .write = lfs_directoryWrite,
+    .statfs = lfs_Statfs,
+    .flush = lfs_Flush,
+    .release = lfs_File_Release,
+    .fsync = NULL,
+    .setxattr = NULL,
+    .getxattr = NULL,
+    .listxattr = NULL,
+    .removexattr = NULL,
+    .opendir = lfs_Opendir,
+    .readdir = lfs_directoryReaddir,
+    .releasedir = NULL,
+    .fsyncdir = NULL,
+    .init = lfs_Initialize,
+    .destroy = lfs_Destroy,
+    .access = lfs_access,
+    .create = lfs_fileCreate,
+    .ftruncate = NULL,
+    .fgetattr = NULL,
+    .lock = NULL,
+    .utimens = NULL,
+    .bmap = NULL,
+    .flag_nullpath_ok = 0,
+    .flag_nopath = 0,
+    .flag_utime_omit_ok = 1,
+    .flag_reserved = 29,
+    .ioctl = NULL,
+    .poll = NULL,
+    .write_buf = NULL,
+    .read_buf = NULL,
+    .flock = NULL,
+    .fallocate = NULL,
+};
+*/
+
+
+
+// static struct fuse_operations_comp2 prefix_oper {
+static struct fuse_operations prefix_oper {
+    .init       =   imp_init,
+    .getattr    =   imp_file_getattr,
+    .unlink     =   imp_unlink,
+    .rmdir      =   imp_rmdir,
+    .open       =   imp_file_open,
+    .opendir    =   imp_dir_open,
+    .read       =   imp_file_read,
+    .write      =   imp_file_write,
+    .statfs     =   imp_statfs,
+    .release    =   imp_file_release,
+    .releasedir =   imp_dir_release,
+    .destroy    =   imp_destroy,
+    .create     =   imp_file_create,
+    .link       =   imp_link,
+    .symlink    =   imp_symlink,
+    .truncate   =   imp_truncate,
+    .rename     =   imp_rename,
+    .chmod      =   imp_chmod,
+    .chown      =   imp_chown,
+};
+
+
 // Initialize LFS f_directory layer. This will create a root f_directory "/".
 int imp_init(struct fuse_conn_info *conn)
 {

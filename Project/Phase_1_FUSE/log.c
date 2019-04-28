@@ -773,8 +773,12 @@ int Log_Open(bool isFlashEmpty){
     nargv[3] = "-d";
     nargv[4] = mountpoint;
 
-    return fuse_main(nargc, nargv, &fuse_imp_oper, flash_filename);
-	
+    //directory -> Directory_open("/", NULL);  //EDIT
+    // This should be different from the function called by mklfs
+    // This should handle the (mount or unmount maybe)??
+    // or handle the loading of the root directory ??
+
+    return fuse_main(nargc, nargv, &prefix_oper, flash_filename);
 
 }
 
@@ -831,7 +835,7 @@ int writeCheckpoint(){
 	u_int indexToWrite = last_CR_index+1;
 	if(indexToWrite == 2){ indexToWrite = 0;}
 
-	size_t length = sizeof(Inode.Container);
+	size_t length = sizeof(inode_of_ifile.container);
 
 	LogAddress new_logAddress1;
 	int num_blocks = ceil(length / (FLASH_SECTOR_SIZE * superBlock.block_size));
@@ -912,7 +916,7 @@ int loadCheckpoint(bool isFlashEmpty){
 
 		LogAddress logAddress;
 
-		if(superBlock.cr_addresses[0].segment!=-1){
+		if(superBlock.cr_addresses[0].segment != 0){
 			// load into cr_array
 			length = sizeof(CR);
 			logAddress = superBlock.cr_addresses[0];
@@ -939,8 +943,10 @@ int loadCheckpoint(bool isFlashEmpty){
 			if(cr_array[0].write_time > cr_array[1].write_time){
 				// Load the inode of the ifile
 				logAddress = cr_array[0].inode_ifile_address;
-				length = sizeof(Inode.Container);
 				
+				// length = sizeof(Inode.Container);
+				length = sizeof(inode_of_ifile.container);
+
 				// Note: Added protection here
 				buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
 
@@ -961,7 +967,7 @@ int loadCheckpoint(bool isFlashEmpty){
 
 		}
 
-		if(superBlock.cr_addresses[1].segment!=-1){
+		if(superBlock.cr_addresses[1].segment != 0){
 			// load into cr_array
 			length = sizeof(CR);
 			logAddress = superBlock.cr_addresses[1];
@@ -988,7 +994,7 @@ int loadCheckpoint(bool isFlashEmpty){
 			if(cr_array[1].write_time > cr_array[0].write_time){
 				// Load the inode of the ifile
 				logAddress = cr_array[1].inode_ifile_address;
-				length = sizeof(Inode.Container);
+				length = sizeof(inode_of_ifile.container);
 				
 				// Note: Added protection here
 				buffer = malloc(ceil(length/FLASH_SECTOR_SIZE)*FLASH_SECTOR_SIZE);
@@ -1012,8 +1018,15 @@ int loadCheckpoint(bool isFlashEmpty){
 	}	else {
 		// This flash is freshly created
 		// clear the checkpoint addresses in the superblock
-		superBlock.cr_addresses[0] = {-1, -1};
-		superBlock.cr_addresses[1] = {-1, -1};
+		LogAddress tmpAddress;
+		tmpAddress.segment = 0;
+		tmpAddress.block = 0;
+
+		// superBlock.cr_addresses[0] = {.segment = 0, .block = 0};
+		// superBlock.cr_addresses[1] = {.segment = 0, .block = 0};
+
+		superBlock.cr_addresses[0] = tmpAddress;
+		superBlock.cr_addresses[1] = tmpAddress;
 
 		// clear the checkpoint regions
 		cr_array[0].write_time = 0;

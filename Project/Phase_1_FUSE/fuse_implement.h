@@ -55,7 +55,9 @@ void imp_destroy(void *private_data);
 //extern Fuse_Implement fuse_implement;
 /*** End edit ***/
 
+/*
 static struct fuse_operations_comp2 prefix_oper {
+// static struct fuse_operations prefix_oper {
     .init       =   imp_init,
     .getattr    =   imp_file_getattr,
     .unlink     =   imp_unlink,
@@ -76,5 +78,10 @@ static struct fuse_operations_comp2 prefix_oper {
     .chmod      =   imp_chmod,
     .chown      =   imp_chown,
 };
+*/
+
+// extern struct fuse_operations_comp2 prefix_oper;
+extern struct fuse_operations prefix_oper;
+
 
 #endif
