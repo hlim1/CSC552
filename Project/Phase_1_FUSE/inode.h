@@ -68,6 +68,11 @@ class Inode
         int Inode_Update_Last_Access();
         int Inode_Getter(u_int inum, u_int offset, Inode* inode);
         int Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_block_ptr);
+        int Inode_Chmod(Inode* inode, mode_t mode);
+        int Inode_Chown(Inode* inode, uid_t uid, gid_t id);
+        int Inode_Rename(const char* path, const char* name);
+
+        int Inode_Check_Mode (uid_t uid);
 };
 
 #endif

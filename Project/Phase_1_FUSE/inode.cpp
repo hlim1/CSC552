@@ -234,3 +234,59 @@ int Inode::Inode_Get_Last_Inum(uint_t &inum)
     }
     return 0;   
 }
+
+/*
+ *  Updates the mode of a file or directory
+ */
+int Inode::Inode_Chmod(Inode* inode, mode_t mode)
+{
+    int status = inode.Inode_Check_Mode(mode);
+    if (status > 0)
+    {
+        std::cerr << "Invalid mode was received in Inode_chmod. Input mode: " << mode << std::endl;
+    }
+
+    inode.container.m_node = mode;
+    return 0;
+}
+
+/*
+ *  Update the uid and/or gid of a file or directory
+ */
+int Inode::Inode_Chown(Inode* inode, uid_t uid, gid_t id)
+{
+    inode.container.m_owner = uid;
+    inode.container.m_group = id;
+
+    return 0;
+}
+
+/*
+ *  Check the input mode of a file
+ */
+int Inode::Inode_Check_Mode(uid_t uid)
+{
+    int status = 1;
+
+    uid fileMode[15] = {S_IRWXU, S_IRUSR, S_IWUSR, S_IXUSR, S_IRWXG, S_IRGRP, S_IWGRP, S_IXGRP,
+                        S_IRWXO, S_IROTH, S_IWOTH, S_IXOTH, S_ISUID, S_ISGID, S_ISVTX};
+
+    for (int i = 0; i < 15; i++)
+    {
+       if (fileMode[i] == uid)
+          status = 0; 
+    }
+
+    return status;
+}
+
+/*
+ *  Update the name and path of a file or directory
+ */
+int Inode::Inode_Rename(const char* new_path, const char* new_name)
+{
+    memcpy(container.m_file, new_name, strlen(filename)+1);
+    memcpy(container.m_path, new_path, strlen(path)+1);
+
+    return 0;
+}

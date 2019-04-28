@@ -37,8 +37,8 @@ typedef struct DirMap
 
 // Extern variables
 extern std::list<DirMap> directory; // This holds the in-memory directory <name,inum> list
+extern std::list<Inode> list_of_inodes;
 extern Inode inode_of_ifile;        // This holds the inode of ifile
-extern Inode inode_of_current_file; // This inode holds the inode of currently accessing file
 
 const int INUMOFROOTDIR = 0;        // Inum of the root directory, which is the very first file that gets created get a deafuly inum of 0
 const int INUMOFIFILE = sizeof(Inode::Container);

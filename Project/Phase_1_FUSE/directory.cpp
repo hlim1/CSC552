@@ -5,7 +5,6 @@
 /*** End Edit ***/ 
 
 Inode inode_of_ifile; // = new Inode();
-Inode inode_of_current_file; // = new Inode();
 
 /*
  *********************************************************************
@@ -144,8 +143,21 @@ int Directory::Directory_create(char* path, mode_t mode)
     return 0;
 }
 
-
-int Directory_open(const char* path, struct fuse_file_info* fi)
+/*
+ *********************************************************************
+ * int
+ * Directory_open
+ *
+ * Parameters:
+ * const char* path - directory path
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ *
+ *********************************************************************
+ */
+int Directory::Directory_open(const char* path, struct fuse_file_info* fi)
 {
     return 0;
 }
@@ -309,7 +321,8 @@ int Directory::Directory_file_create (char* path, mode_t mode, struct fuse_file_
     int filesize = 0;
     char* filename = basename(path);
     mode_t type = S_IFREG;
-    u_int inum = new_inode.get_last_inum();
+    u_int inum;
+    int status = = new_inode.Inode_Get_Last_Inum(inum);
 
     // Create a file. If successful, inode should be initialized with empty direct pointers
     if (new_file.File_Create(&new_inode, path, filename, inum, filesize, mode, type))
@@ -325,7 +338,7 @@ int Directory::Directory_file_create (char* path, mode_t mode, struct fuse_file_
     if(strcmp(filename, ".ifiile") == 0)
         inode_of_ifile = new_inode;
     else
-        inode_of_current_file = new_inode;
+        list_of_inodes.push_back(new_inode);
 
     return 0;
 }
@@ -438,27 +451,83 @@ int Directory::Directory_file_read(char* path, char* buffer, off_t offset, size_
     return 0;
 }
 
+int DirectoryDirectory_file_rename(const char* org_path, const char* new_path)
+{
+    char* org_name = basename(org_path);
+    char* new_name = basename(new_path);
+
+    Inode inode;
+    int status = inode.Inode_Find_Inode(org_name, org_path, &inode);
+    if (status > 0)
+    {
+         std::cerr << "Error while retrieving an inode in the Directory_file_rename" << std::endl;
+         return 1;
+    }
+
+    status = inode.Inode_Rename(new_name, new_path);
+    if (status > 0)
+    {
+         std::cerr << "Error while renaming in the Directory_file_rename" << std::endl;
+         return 1;
+    }
+
+    return 0;
+}
+
+int Directory::Directory_chmod(const char* path, mode_t mode)
+{
+    char* name = basename(path); 
+
+    Inode inode;
+    int status = inode.Inode_Find_Inode(name, path, &inode);
+    if (status > 0)
+    {
+         std::cerr << "Error while retrieving an inode in the Directory_chmod" << std::endl;
+         return 1;
+    }
+
+    status = inode.Inode_Chmod(&inode, mode);
+    if (status > 0)
+    {
+         std::cerr << "Error while changing the mode of a file or directory Directory_chmod" << std::endl;
+         return 1;
+    }
+    
+    // Add the inode at the back of the list, which will be added to the .file at checkpoint 
+    list_of_inodes.push_back(inode); 
+    return 0;
+}
+
+int Directory::Directory_chown(const char* path, uid_t uid, gid_t id)
+{
+    char* name = basename(path); 
+
+    Inode inode;
+    int status = inode.Inode_Find_Inode(name, path, &inode);
+    if (status > 0)
+    {
+         std::cerr << "Error while retrieving an inode in the Directory_chmod" << std::endl;
+         return 1;
+    }
+
+    status = inode.Inode_Chown(&inode, uid, id);
+    if (status > 0)
+    {
+         std::cerr << "Error while changing the mode of a file or directory Directory_chmod" << std::endl;
+         return 1;
+    }
+    
+    // Add the inode at the back of the list, which will be added to the .file at checkpoint 
+    list_of_inodes.push_back(inode);
+    return 0;
+}
+
 int Directory::Directory_file_truncate(const char* path, int size)
 {
     return 0;
 }
 
-int Directory_file_rename(const char* org_path, const char* new_path)
-{
-    return 0;
-}
-
 int Directory::Directory_file_free(const char* path)
-{
-    return 0;
-}
-
-int Directory_chmod(const char* path, mode_t mode)
-{
-    return 0;
-}
-
-int Directory_chown(const char* path, uid_t uid, gid_t id)
 {
     return 0;
 }
