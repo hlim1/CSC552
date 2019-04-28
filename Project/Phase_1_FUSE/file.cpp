@@ -48,7 +48,7 @@ int File::File_Create (Inode* inode, const char* path, const char* filename, u_i
     return 0;
 }
 
-int File_Open(const char* path, Inode* inode)
+int File::File_Open(const char* path, Inode* inode)
 {
     char* ch_path = strdup(path);
     char* filename = basename(ch_path);
