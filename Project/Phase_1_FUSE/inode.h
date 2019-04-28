@@ -62,7 +62,8 @@ class Inode
         // A Constructor for inode with the passed metadata and allocate the inode in the ifile
         int Inode_Initialization(const char* filename, const char* path, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type);
         int Inode_Write(u_int index, u_int seg, u_int block_address);
-        int Inode_Get_Inum(u_int &inum); // Returns an inum of the current inode
+        int Inode_Get_Inum(u_int &inum);
+        int Inode_Get_Last_Inum(u_int &inum);
         int Inode_Find_Inode(const char* filename, const char* path, Inode* found_inode);
         int Inode_Update_Last_Access();
         int Inode_Getter(u_int inum, u_int offset, Inode* inode);

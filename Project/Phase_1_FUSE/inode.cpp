@@ -164,7 +164,7 @@ int Inode::Inode_Getter(u_int inum, u_int offset, Inode* inode)
  *  Updates the passed empty direct pointer array and indirect pointer list with the current
  *  inode's pointers to blocks
  */
-int Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_block_ptr)
+int Inode::Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_block_ptr)
 {
     int status = 0;
     // If the first m_direct_pointer is NULL (empty), it's an error that the blocks are not properly
@@ -202,4 +202,35 @@ int Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::list<Block
         return 1;
 
     return 1;
+}
+
+int Inode::Inode_Get_Last_Inum(uint_t &inum)
+{
+    int status = 1;
+    // Open .ifile
+    std::ifstream ifile(".ifile", std::ifstream::binary);
+    if (ifile)
+    {
+        ifile.seekg(0, ifile.end);
+        int length = ifile.tellg();
+        int size = length / sizeof(Inode::Container);
+        ifile.seekg(0, ifile.beg);
+
+        Inode inodes[size];
+        ifile.read((char*)&inodes, length);
+
+        if (inodes[0] == NULL)
+        {
+            std::cerr << "Error. ifile was not read properly in Inode_Get_Last_Inum." << std::endl;
+            return 1;
+        }
+        inum = inode[0].container.m_inum;
+        return 0;
+    }
+    else
+    {
+        std::cerr << "Failed to open .ifile in Inode_find_inum function" << std::endl;
+        return 1;
+    }
+    return 0;   
 }
