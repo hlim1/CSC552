@@ -34,6 +34,7 @@
  */
 int File::File_Create (Inode* inode, const char* path, const char* filename, u_int inum, int filesize, mode_t mode, mode_t type)
 {
+    // Get the current time
     time_t cur_time;
     time(&cur_time);
 
@@ -41,22 +42,25 @@ int File::File_Create (Inode* inode, const char* path, const char* filename, u_i
     int status = inode->Inode_Initialization(filename, path, inum, cur_time, filesize, mode, type);
     if (status)
     {
-        std::cerr << "File Create failed" << std::endl;
+        std::cerr << "Error: Unable to create file" << std::endl;
+        std::cerr << "File: file.cpp. Function: File_Create" << std::endl;
         return 1;
     }
 
     return 0;
 }
 
-int File_Open(const char* path, Inode* inode)
+int File::File_Open(const char* path, Inode* inode)
 {
     char* ch_path = strdup(path);
     char* filename = basename(ch_path);
 
-    int status = inode->Inode_Find_Inode(filename, path, inode);     
+    int status = f_inode.Inode_Find_Inode(filename, path, inode);
+
     if (status > 0)
     {
-        std::cerr << "Error while finding the inode in File_Open" << std::endl;
+        std::cerr << "Error: Unable to find the inode" << std::endl;
+        std::cerr << "File: file.cpp. Function: File_Open" << std::endl;
         return 1;
     }
 
@@ -85,7 +89,7 @@ int File_Open(const char* path, Inode* inode)
  *
  *********************************************************************
  */
-int File::File_Write(u_int inum, off_t offset, int length, void* buffer)
+int File::File_Write(u_int inum, off_t offset, size_t length, void* buffer)
 {
     LogAddress* logAddress;
     // Passing 0 for the block number as it needs only the first block address
@@ -103,7 +107,7 @@ int File::File_Write(u_int inum, off_t offset, int length, void* buffer)
     }
 
     Inode found_inode;
-    status = found_inode.Inode_Getter(inum, offset, &found_inode);
+    status = f_inode.Inode_Getter(inum, offset, &found_inode);
     if (status)
     {
         std::cerr << "Failed to get the target inode" << std::endl;
@@ -126,8 +130,7 @@ int File::File_Write(u_int inum, off_t offset, int length, void* buffer)
             return 1;
         }
         // Update the current_block address and segs to the next block and segment addresses
-        current_block_addr = current_block_addr + num_bytes_in_block;
-        current_segment = current_segment + num_bytes_in_segment;
+        current_block_addr += 1;
     }
 
     return 0;
@@ -154,7 +157,7 @@ int File::File_Write(u_int inum, off_t offset, int length, void* buffer)
  *
  *********************************************************************
  */
-int File::File_Read(u_int inum, off_t offset, int length, void* buffer)
+int File::File_Read(u_int inum, off_t offset, size_t length, void* buffer)
 {
     int status = 0;
     // Find the target inode from the .ifile
@@ -170,7 +173,7 @@ int File::File_Read(u_int inum, off_t offset, int length, void* buffer)
 
     Block_Ptr dir_block_ptr[4];
     std::list<Block_Ptr> ind_block_ptr;
-    status = found_inode.Inode_Get_Block_Ptr(found_inode, dir_block_ptr, ind_block_ptr);
+    status = f_inode.Inode_Get_Block_Ptr(found_inode, dir_block_ptr, ind_block_ptr);
 
     if (status == 1)
     {

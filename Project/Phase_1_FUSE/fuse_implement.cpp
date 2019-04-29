@@ -158,7 +158,7 @@ int imp_dir_open(const char* path, struct fuse_file_info* fi)
 int imp_dir_read(const char* path, fuse_fill_dir_t filler, char* buffer, off_t offset, struct fuse_file_info* fi)
 {
     std::cout << "Read and return one or more f_directory entries to the caller. imp_dir_read." << std::endl;
-    int status = f_directory->Directory_read(path, buffer, filler, offset, fi);
+    int status = f_directory->Directory_read(path, filler, buffer, offset, fi);
     return status;
 }
 
@@ -178,8 +178,9 @@ void imp_destroy(void *private_data)
 
 int imp_file_create(const char* path, mode_t mode, struct fuse_file_info* fi)
 {
+    mode_t default_type = S_IFREG;
     std::cout << "Create a file. imp_file_create" << std::endl;
-    int status = f_directory->Directory_file_create(path, mode, fi);
+    int status = f_directory->Directory_file_create(path, mode, default_type, fi);
     return status;
 }
 

@@ -52,7 +52,7 @@ class Inode
             u_int  m_inum;
 
             Block_Ptr m_direct_pointer[4]; // 4 direct pointers to the first 4 block of the of the file
-            std::list<Block_Ptr> m_indirect_pointers; // Indirect pointer to a block of direct pointer Phase 2
+            Block_Ptr* m_indirect_pointers; // Indirect pointer to a block of direct pointer Phase 2
 
             time_t m_last_modified;   // Holds the last modified time
             time_t m_last_accessed;   // Holds the last modified time
@@ -62,11 +62,17 @@ class Inode
         // A Constructor for inode with the passed metadata and allocate the inode in the ifile
         int Inode_Initialization(const char* filename, const char* path, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type);
         int Inode_Write(u_int index, u_int seg, u_int block_address);
-        int Inode_Get_Inum(u_int &inum); // Returns an inum of the current inode
+        int Inode_Get_Inum(u_int &inum);
+        int Inode_Get_Last_Inum(u_int &inum);
         int Inode_Find_Inode(const char* filename, const char* path, Inode* found_inode);
         int Inode_Update_Last_Access();
         int Inode_Getter(u_int inum, u_int offset, Inode* inode);
         int Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_block_ptr);
+        int Inode_Chmod(Inode* inode, mode_t mode);
+        int Inode_Chown(Inode* inode, uid_t uid, gid_t id);
+        int Inode_Rename(const char* path, const char* name);
+
+        int Inode_Check_Mode (uid_t uid);
 };
 
 #endif

@@ -164,7 +164,7 @@ int Inode::Inode_Getter(u_int inum, u_int offset, Inode* inode)
  *  Updates the passed empty direct pointer array and indirect pointer list with the current
  *  inode's pointers to blocks
  */
-int Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_block_ptr)
+int Inode::Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_block_ptr)
 {
     int status = 0;
     // If the first m_direct_pointer is NULL (empty), it's an error that the blocks are not properly
@@ -202,4 +202,91 @@ int Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::list<Block
         return 1;
 
     return 1;
+}
+
+int Inode::Inode_Get_Last_Inum(uint_t &inum)
+{
+    int status = 1;
+    // Open .ifile
+    std::ifstream ifile(".ifile", std::ifstream::binary);
+    if (ifile)
+    {
+        ifile.seekg(0, ifile.end);
+        int length = ifile.tellg();
+        int size = length / sizeof(Inode::Container);
+        ifile.seekg(0, ifile.beg);
+
+        Inode inodes[size];
+        ifile.read((char*)&inodes, length);
+
+        if (inodes[0] == NULL)
+        {
+            std::cerr << "Error. ifile was not read properly in Inode_Get_Last_Inum." << std::endl;
+            return 1;
+        }
+        inum = inode[0].container.m_inum;
+        return 0;
+    }
+    else
+    {
+        std::cerr << "Failed to open .ifile in Inode_find_inum function" << std::endl;
+        return 1;
+    }
+    return 0;   
+}
+
+/*
+ *  Updates the mode of a file or directory
+ */
+int Inode::Inode_Chmod(Inode* inode, mode_t mode)
+{
+    int status = inode.Inode_Check_Mode(mode);
+    if (status > 0)
+    {
+        std::cerr << "Invalid mode was received in Inode_chmod. Input mode: " << mode << std::endl;
+    }
+
+    inode.container.m_node = mode;
+    return 0;
+}
+
+/*
+ *  Update the uid and/or gid of a file or directory
+ */
+int Inode::Inode_Chown(Inode* inode, uid_t uid, gid_t id)
+{
+    inode.container.m_owner = uid;
+    inode.container.m_group = id;
+
+    return 0;
+}
+
+/*
+ *  Check the input mode of a file
+ */
+int Inode::Inode_Check_Mode(uid_t uid)
+{
+    int status = 1;
+
+    uid fileMode[15] = {S_IRWXU, S_IRUSR, S_IWUSR, S_IXUSR, S_IRWXG, S_IRGRP, S_IWGRP, S_IXGRP,
+                        S_IRWXO, S_IROTH, S_IWOTH, S_IXOTH, S_ISUID, S_ISGID, S_ISVTX};
+
+    for (int i = 0; i < 15; i++)
+    {
+       if (fileMode[i] == uid)
+          status = 0; 
+    }
+
+    return status;
+}
+
+/*
+ *  Update the name and path of a file or directory
+ */
+int Inode::Inode_Rename(const char* new_path, const char* new_name)
+{
+    memcpy(container.m_file, new_name, strlen(filename)+1);
+    memcpy(container.m_path, new_path, strlen(path)+1);
+
+    return 0;
 }
