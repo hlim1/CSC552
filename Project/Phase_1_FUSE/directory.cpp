@@ -386,7 +386,7 @@ int Directory_file_open(const char* path, struct fuse_file_info* fi)
  * Given the inum of inode, it calls File_Write to initialize the inode's direct/indirect pointers.
  *********************************************************************
  */
-int Directory::Directory_file_write(const char* path, void* buffer, off_t offset, size_t length)
+int Directory::Directory_file_write(const char* path, const char* buffer, off_t offset, size_t length)
 {
     char* ch_path = strdup(path);
     char* dirname = basename(ch_path); 
@@ -628,7 +628,7 @@ int Directory::Directory_chown(const char* path, uid_t uid, gid_t id)
     return 0;
 }
 
-int Directory::Directory_file_truncate(const char* path, int size)
+int Directory::Directory_file_truncate(const char* path, off_t offset)
 {
     return 0;
 }

@@ -85,7 +85,7 @@ int Log_Read(LogAddress logAddress, u_int length, void *buffer);
  *********************************************************************
  */
 
-int Log_Write(u_int inum, u_int block, u_int length, void *buffer, LogAddress *logAddress);
+int Log_Write(u_int inum, u_int block, u_int length, const void *buffer, LogAddress *logAddress);
 
 /*
  *********************************************************************
@@ -311,7 +311,7 @@ int loadSegment(u_int segmentNum, Segment* segment);
 int loadSegmentSummary(Segment* segment);
 
 int writeTailSegToFlash();
-int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress *logAddress);
+int writeToTail(u_int inum, u_int block, u_int length, const void *buffer, LogAddress *logAddress);
 
 int writeCheckpoint();
 int loadCheckpoint(bool isFlashEmpty=false);

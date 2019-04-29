@@ -7,7 +7,53 @@
 using namespace std;
 
 #include "directory.h"
-// #include "file.h"
+
+static struct fuse_operations prefix_oper;
+
+void initializeFuseStructure()
+{
+    prefix_oper.init = imp_init;
+    prefix_oper.destroy     = imp_destroy;
+    prefix_oper.getattr     = imp_file_getattr;
+    prefix_oper.fgetattr    = NULL;
+    prefix_oper.access      = NULL;
+    prefix_oper.readlink    = NULL;
+    prefix_oper.readdir     = imp_dir_read;
+    prefix_oper.mknod       = NULL;
+    prefix_oper.mkdir       = imp_mkdir;
+    prefix_oper.symlink     = imp_symlink;
+    prefix_oper.unlink      = imp_unlink;
+    prefix_oper.rmdir       = imp_rmdir;
+    prefix_oper.rename      = imp_rename;
+    prefix_oper.link        = imp_link;
+    prefix_oper.chmod       = imp_chmod;
+    prefix_oper.chown       = imp_chown;
+    prefix_oper.truncate    = imp_truncate;
+    prefix_oper.ftruncate   = NULL;
+    prefix_oper.utimens     = NULL;
+    prefix_oper.create      = imp_file_create;
+    prefix_oper.open        = imp_file_open;
+    prefix_oper.read        = imp_file_read;
+    prefix_oper.write       = imp_file_write;
+    prefix_oper.statfs      = imp_statfs;
+    prefix_oper.release     = imp_file_release;
+    prefix_oper.opendir     = imp_dir_open;
+    prefix_oper.releasedir  = imp_dir_release;
+    prefix_oper.fsync       = NULL;
+    prefix_oper.flush       = NULL;
+    prefix_oper.fsyncdir    = NULL;
+    prefix_oper.lock        = NULL;
+    prefix_oper.bmap        = NULL;
+    prefix_oper.ioctl       = NULL;
+    prefix_oper.poll        = NULL;
+#ifdef HAVE_SETXATTR
+    prefix_oper.setxattr    = NULL;
+    prefix_oper.getxattr    = NULL;
+    prefix_oper.listxattr   = NULL;
+    prefix_oper.removexattr = NULL;
+#endif
+    prefix_oper.flag_nullpath_ok = 0;
+}
 
 // Global Definitions
 SuperBlock superBlock;
@@ -115,52 +161,6 @@ static struct fuse_operations lfs_oper {
 
 /******** Default structure from tutorial *********/
 
-/*
-static struct fuse_operations prefix_oper = {
-    .init        = prefix_init,
-    .destroy     = prefix_destroy,
-    .getattr     = prefix_getattr,
-    .fgetattr    = prefix_fgetattr,
-    .access      = prefix_access,
-    .readlink    = prefix_readlink,
-    .readdir     = prefix_readdir,
-    .mknod       = prefix_mknod,
-    .mkdir       = prefix_mkdir,
-    .symlink     = prefix_symlink,
-    .unlink      = prefix_unlink,
-    .rmdir       = prefix_rmdir,
-    .rename      = prefix_rename,
-    .link        = prefix_link,
-    .chmod       = prefix_chmod,
-    .chown       = prefix_chown,
-    .truncate    = prefix_truncate,
-    .ftruncate   = prefix_ftruncate,
-    .utimens     = prefix_utimens,
-    .create      = prefix_create,
-    .open        = prefix_open,
-    .read        = prefix_read,
-    .write       = prefix_write,
-    .statfs      = prefix_statfs,
-    .release     = prefix_release,
-    .opendir     = prefix_opendir,
-    .releasedir  = prefix_releasedir,
-    .fsync       = prefix_fsync,
-    .flush       = prefix_flush,
-    .fsyncdir    = prefix_fsyncdir,
-    .lock        = prefix_lock,
-    .bmap        = prefix_bmap,
-    .ioctl       = prefix_ioctl,
-    .poll        = prefix_poll,
-#ifdef HAVE_SETXATTR
-    .setxattr    = prefix_setxattr,
-    .getxattr    = prefix_getxattr,
-    .listxattr   = prefix_listxattr,
-    .removexattr = prefix_removexattr,
-#endif
-    .flag_nullpath_ok = 0,                
-};
-
-*/ 
 
 
 // This function initializes the log structure and is called by mklfs
@@ -460,7 +460,7 @@ int readFromSegment(Segment *segment, LogAddress logAddress, u_int length, void 
  *********************************************************************
  */
 
-int Log_Write(u_int inum, u_int block, u_int length, void *buffer, LogAddress *logAddress){
+int Log_Write(u_int inum, u_int block, u_int length, const void *buffer, LogAddress *logAddress){
 
 	// check if the tail segment gets full when writing length bytes
 	// write the given bytes to the log
@@ -595,7 +595,7 @@ int writeTailSegToFlash(){
 // Writes length bytes in the tail segment and updates the segment summary for the blocks
 // involved
 // Return 0 on success
-int writeToTail(u_int inum, u_int block, u_int length, void *buffer, LogAddress *logAddress){
+int writeToTail(u_int inum, u_int block, u_int length, const void *buffer, LogAddress *logAddress){
 
 	//writes length block in the tail segment
 	memcpy(((char*)segmentCache[tailSegIndex].seg_bytes) + (numUsedBlocksInTail*num_bytes_in_block), 
@@ -666,7 +666,7 @@ int Log_Free(LogAddress logAddress, u_int length){
 
 // Default param: isFlashEmpty=false 
 int Log_Open(bool isFlashEmpty){
-
+    initializeFuseStructure();
 	int rc;
 
 	char *filename;

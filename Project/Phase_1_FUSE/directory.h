@@ -58,9 +58,9 @@ class Directory
         // Functions for file
         int Directory_file_create(const char* path, mode_t type, mode_t mode, struct fuse_file_info* fi);
         int Directory_file_open(const char* path, struct fuse_file_info* fi);
-        int Directory_file_write(const char* path, void* buffer, off_t offset, size_t length);
+        int Directory_file_write(const char* path, const char* buffer, off_t offset, size_t length);
         int Directory_file_read(const char* path, void* buffer, off_t offset, size_t length);
-        int Directory_file_truncate(const char* path, int size);
+        int Directory_file_truncate(const char* path, off_t offset);
         int Directory_file_rename(const char* org_path, const char* new_path);
         int Directory_file_free(const char* path);
 };
