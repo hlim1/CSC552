@@ -33,7 +33,8 @@ int Directory::Directory_initialization(struct fuse_conn_info* conn)
     u_int inum = INUMOFROOTDIR; // Always zero(0)
     if (inum != 0)
     {
-        std::cerr << "Invalid inum for the root directory" << std::endl;
+        std::cerr << "Error: Invalid inum for the root directory" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_initialization" << std::endl;
         return 1;
     }
 
@@ -41,7 +42,8 @@ int Directory::Directory_initialization(struct fuse_conn_info* conn)
     // Create root directory with mode(permission) with read and write for owner
     if (Directory_create ("/", S_IRUSR | S_IWUSR) > 0)
     {
-        std::cerr << "Root directory '/' creation failed." << std::endl;
+        std::cerr << "Error: Unable to create Root directory '/'" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_initialization" << std::endl;
         return 1;
     }
 
@@ -50,7 +52,8 @@ int Directory::Directory_initialization(struct fuse_conn_info* conn)
     // Create .file with a regular file mode, and read and writer permossions for owner
     if (Directory_file_create ("/", S_IFREG, S_IRUSR | S_IWUSR, NULL) > 0)
     {
-        std::cerr << "file '.file' creation failed." << std::endl;
+        std::cerr << "Error: file Unable to create '.file'" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_initialization" << std::endl;
         return 1;
     }
 
@@ -77,6 +80,9 @@ int Directory::Directory_initialization(struct fuse_conn_info* conn)
  */
 int Directory::Directory_create(const char* path, mode_t mode)
 {
+    char* ch_path = strdup(path);
+    char* dirname = basename(ch_path);
+
     Inode inode;                // Inode for the new file
     DirMap cur_directory;       // "."
     DirMap parent_directory;    // ".."
@@ -89,14 +95,40 @@ int Directory::Directory_create(const char* path, mode_t mode)
     int status = inode.Inode_Get_Last_Inum(inum);
     if (status > 0)
     {
-        std::cerr << "Error while retrieving the last inum of inode in Directory_create." << std::endl;
-        return 1;
+        // This is a case where both the .file and in-memory list are empty.
+        if (list_of_inodes.empty())
+        {
+            // Only case that it is valid is when it's a root directory creation
+            if (path != "/")
+            {
+                std::cerr << "Error: Unable to retrieve the last inum of inode - from file" << std::endl;
+                std::cerr << "File: directory.cpp. Function: Directory_create" << std::endl;
+                return 1;
+            }
+            else
+            {
+                inum = 0;
+            }
+        }
+        else
+        {
+            status = 0;
+            Inode last_inode_in_mem = list_of_inodes.back();
+            status = last_inode_in_mem.Inode_Get_Inum(inum);
+            if (status > 0)
+            {
+                std::cerr << "Error: Unable to retrieve the last inum of inode - from list" << std::endl;
+                std::cerr << "File: directory.cpp. Function: Directory_create" << std::endl;
+                return 1;
+            }
+        }
     }
 
     // Creates a new directory, which really is simply a file that will hold <name, inum> list
     if (Directory_file_create (path, type, mode, NULL) > 0)
     {
-        std::cerr << "file '.' creation failed." << std::endl;
+        std::cerr << "Error: Unable to create Directory file" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_create" << std::endl;
         return 1;
     }
 
@@ -104,7 +136,8 @@ int Directory::Directory_create(const char* path, mode_t mode)
     inum = inum + 1;
     if (Directory_file_create ("/.", S_IFREG, S_IRUSR, NULL) > 0)
     {
-        std::cerr << "file '.' creation failed." << std::endl;
+        std::cerr << "Error: Unable to create file '.'" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_create" << std::endl;
         return 1;
     }
     // Store file name "." and inum into the directory object
@@ -115,7 +148,8 @@ int Directory::Directory_create(const char* path, mode_t mode)
     inum = inum + 1;
     if (Directory_file_create ("/..", S_IFREG, S_IRUSR, NULL) > 0)
     {
-        std::cerr << "file '..' creation failed." << std::endl;
+        std::cerr << "Error: Unable to create file '..'" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_create" << std::endl;
         return 1;
     }
     // Store file name ".." and inum into the directory object
@@ -314,9 +348,34 @@ int Directory::Directory_file_create (const char* path, mode_t type, mode_t mode
     int status = new_inode.Inode_Get_Last_Inum(inum);
     if (status > 0)
     {
-        std::cerr << "Error: Unable to retrieve the last inum from the .ifile" << std::endl;
-        std::cerr << "File: directory.cpp. Function: Directory_file_create" << std::endl;
-        return 1;
+        // This is a case where both the .file and in-memory list are empty.
+        if (list_of_inodes.empty())
+        {
+            // Only case that it is valid is when it's a root directory creation
+            if (path != "/")
+            {
+                std::cerr << path << std::endl;
+                std::cerr << "Error: Unable to retrieve the last inum of inode - from file" << std::endl;
+                std::cerr << "File: directory.cpp. Function: Directory_create" << std::endl;
+                return 1;
+            }
+            else
+            {
+                inum = 0;
+            }
+        }
+        else
+        {
+            status = 0;
+            Inode last_inode_in_mem = list_of_inodes.back();
+            status = last_inode_in_mem.Inode_Get_Inum(inum);
+            if (status > 0)
+            {
+                std::cerr << "Error: Unable to retrieve the last inum of inode - from list" << std::endl;
+                std::cerr << "File: directory.cpp. Function: Directory_create" << std::endl;
+                return 1;
+            }
+        }
     }
 
     // Create a file. If successful, inode should be initialized with empty direct pointers

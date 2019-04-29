@@ -222,7 +222,6 @@ int Inode::Inode_Get_Last_Inum(u_int &inum)
     }
     else
     {
-        std::cerr << "Failed to open .ifile in Inode_find_inum function" << std::endl;
         return 1;
     }
     return 0;   
