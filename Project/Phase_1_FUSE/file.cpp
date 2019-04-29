@@ -53,7 +53,7 @@ int File_Open(const char* path, Inode* inode)
     char* ch_path = strdup(path);
     char* filename = basename(ch_path);
 
-    int status = Inode_Find_Inode(filename, path, &inode)     
+    int status = inode->Inode_Find_Inode(filename, path, inode);     
     if (status > 0)
     {
         std::cerr << "Error while finding the inode in File_Open" << std::endl;
