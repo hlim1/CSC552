@@ -56,6 +56,7 @@ int File::File_Open(const char* path, Inode* inode)
     char* filename = basename(ch_path);
 
     int status = f_inode.Inode_Find_Inode(filename, path, inode);
+
     if (status > 0)
     {
         std::cerr << "Error: Unable to find the inode" << std::endl;
