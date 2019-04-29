@@ -131,6 +131,11 @@ int File::File_Write(u_int inum, off_t offset, size_t length, void* buffer)
         }
         // Update the current_block address and segs to the next block and segment addresses
         current_block_addr += 1;
+
+        if(current_block_addr >= superBlock.segment_size){
+            current_block_addr = 0;
+            current_segment += 1;
+        }
     }
 
     return 0;
