@@ -85,13 +85,13 @@ int main(int argc, char *argv[]){
     // directory of LFS mounting
     strcpy(mountpoint, argv[argc - 1]);
 
-    cout << "-f: " << fuse_f<< endl;
-    cout << "cache: " << NUM_SEGS_IN_CACHE<<endl;
-    cout << "interval: " << checkpt_interval<<endl;
-    cout << "start: " << clean_start_threshold<<endl;
-    cout << "stop: " << clean_stop_threshold<<endl;
-    cout << flash_filename << endl;
-    cout << mountpoint << endl;
+    std::cout << "-f: " << fuse_f<< std::endl;
+    std::cout << "cache: " << NUM_SEGS_IN_CACHE<<std::endl;
+    std::cout << "interval: " << checkpt_interval<<std::endl;
+    std::cout << "start: " << clean_start_threshold<<std::endl;
+    std::cout << "stop: " << clean_stop_threshold<<std::endl;
+    std::cout << flash_filename << std::endl;
+    std::cout << mountpoint << std::endl;
 
     argv_0 = argv[0];
 
