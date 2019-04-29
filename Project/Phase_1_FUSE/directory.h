@@ -29,7 +29,7 @@
 
 typedef struct DirMap
 {
-    char name[20];
+    const char name[20];
     u_int inum;
 } DirMap;
 
@@ -49,47 +49,20 @@ class Directory
         Directory() {};
         // Functions for directory
         int Directory_initialization(struct fuse_conn_info* conn);
-        
-        /*** Edit sabin ***/
-        int Directory_create(char* path, mode_t mode);
-        /*** edit end ***/
-
+        int Directory_create(const char* path, mode_t mode);
         int Directory_open(const char* path, struct fuse_file_info* fi);
-        
-        /*** Edit sabin ***/
-        // int Directory_read(const char* path, void* buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi);
-        int Directory_read(char* path, void* buffer, off_t offset, struct fuse_file_info* fi);
-        /*** edit end ***/
-
-        /*** Edit sabin ***/
-        // int Directory_write(const char* path, void* buffer, off_t offset, size_t length);
-        int Directory_write(char* path, void* buffer, off_t offset, size_t length);
-        /*** edit end ***/
-
+        int Directory_read(const char* path, void* buffer, off_t offset, struct fuse_file_info* fi);
         int Directory_free(const char* path);
         int Directory_chmod(const char* path, mode_t mode);
         int Directory_chown(const char* path, uid_t uid, gid_t id);
 
         // Functions for file
-        
-        /*** Edit sabin ***/
-        // int Directory_file_create(const char* path, mode_t mode, struct fuse_file_info* fi);
-        int Directory_file_create( char* path, mode_t mode, struct fuse_file_info* fi);
-        /*** edit end ***/
-
-        int Directory_file_open(const char* path, struct fuse_file_info* fi);
-        
-        /*** Edit sabin ***/
-        // int Directory_file_write(const char* path, void* buffer, off_t offset, size_t length);
-        int Directory_file_write(char* path, void* buffer, off_t offset, size_t length);
-        /*** edit end **/
-
-        /*** Edit sabin ***/
-        int Directory_file_read(char* path, char* buffer, off_t offset, size_t length);
-        /*** Edit end ***/
-
+        int Directory_file_create(const char* path, mode_t type, mode_t mode, struct fuse_file_info* fi);
+        int Directory_file_open(const const char* path, struct fuse_file_info* fi);
+        int Directory_file_write(const char* path, void* buffer, off_t offset, size_t length);
+        int Directory_file_read(const char* path, const char* buffer, off_t offset, size_t length);
         int Directory_file_truncate(const char* path, int size);
-        int Directory_file_rename(const char* org_path, const char* new_path);
+        int Directory_file_rename(const char* org_path, const const char* new_path);
         int Directory_file_free(const char* path);
 };
 

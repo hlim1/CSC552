@@ -28,8 +28,6 @@ Inode inode_of_ifile; // = new Inode();
  */
 int Directory::Directory_initialization(struct fuse_conn_info* conn)
 {
-    int status = 0; // 0 is success and > 0 is fail
-
     u_int inum = INUMOFROOTDIR; // Always zero(0)
     if (inum != 0)
     {
@@ -38,10 +36,8 @@ int Directory::Directory_initialization(struct fuse_conn_info* conn)
     }
 
     // Creates a root directory ("/": Forward slash)
-    /*** Edit by Sabin; Fix compile error ***/
-    // if (Directory_create ("/", "/", S_IFDIR, S_IRWXU, inum) > 0)
-    if (Directory_create ("/", S_IFDIR | S_IRWXU) > 0)
-    /*** Edit ended ***/
+    // Create root directory with mode(permission) with read and write for owner
+    if (Directory_create ("/", S_IRUSR | S_IWUSR) > 0)
     {
         std::cerr << "Root directory '/' creation failed." << std::endl;
         return 1;
@@ -49,12 +45,8 @@ int Directory::Directory_initialization(struct fuse_conn_info* conn)
 
     // Creates .ifile when initializing the directory layer
     inum = INUMOFIFILE;
-
-    /*** Edit by Sabin; Fix compile error ***/
-    // if (Directory_file_create ("/", ".file", 0, S_IFREG, S_IRUSR, inum) > 0)
-    if (Directory_file_create ("/", S_IFREG | S_IRUSR, NULL) > 0)
-
-    /*** Edit ended ***/
+    // Create .file with a regular file mode, and read and writer permossions for owner
+    if (Directory_file_create ("/", S_IFREG, S_IRUSR | S_IWUSR, NULL) > 0)
     {
         std::cerr << "file '.file' creation failed." << std::endl;
         return 1;
@@ -70,9 +62,7 @@ int Directory::Directory_initialization(struct fuse_conn_info* conn)
  *
  * Parameters:
  * const char* path - directory path
- * string dirname - current directory name that needs to be created
  * mode_t mode - mode or the permission of the file
- * mode_t type - file or directory
  * u_int inum - inode number of the directory
  *
  * Returns:
@@ -83,61 +73,53 @@ int Directory::Directory_initialization(struct fuse_conn_info* conn)
  *
  *********************************************************************
  */
-
-/*** Edit by sabin ***/
-// int Directory::Directory_create(const char* path, mode_t mode)
-int Directory::Directory_create(char* path, mode_t mode)
-/*** Edit end ***/
-
+int Directory::Directory_create(const char* path, mode_t mode)
 {
     Inode inode;                // Inode for the new file
     DirMap cur_directory;       // "."
     DirMap parent_directory;    // ".."
 
+    // Set type to directory
     mode_t type = S_IFDIR;
-    char* dirname = basename(path);
-    u_int inum = inode.get_last_inum();
-    u_int filesize = 0;
 
-    // Creates a new directory, which really is simply a file that will hold <name, inum> list,
-    // with given directory name and metadata.
-    /*** Edit from sabin ***/
-    // if (Directory_file_create (path, dirname, filesize, mode, type, inum) > 0)
-    if (Directory_file_create (path, mode, NULL) > 0)
-    /*** Edit ended ***/
+    // Retrieve the last inode number in the .ifile
+    u_int inum;
+    int status = inode.Inode_Get_Last_Inum(inum);
+    if (status > 0)
+    {
+        std::cerr << "Error while retrieving the last inum of inode in Directory_create." << std::endl;
+        return 1;
+    }
+
+    // Creates a new directory, which really is simply a file that will hold <name, inum> list
+    if (Directory_file_create (path, type, mode, NULL) > 0)
     {
         std::cerr << "file '.' creation failed." << std::endl;
         return 1;
     }
 
     // Every directory has '.' and '..' files
-    char current[] = ".";
     inum = inum + 1;
-    /*** Edit from sabin ***/
-    // if (Directory_file_create ("/", current, filesize, S_IFREG, S_IRUSR, inum) > 0)
-    if (Directory_file_create ("/", S_IFREG | S_IRUSR, NULL) > 0)
-    /*** Edit ended ***/
+    if (Directory_file_create ("/.", S_IFREG, S_IRUSR, NULL) > 0)
     {
         std::cerr << "file '.' creation failed." << std::endl;
         return 1;
     }
-    memcpy(cur_directory.name, current, strlen(current)+1);
+    // Store file name "." and inum into the directory object
+    memcpy(cur_directory.name, ".", strlen(current)+1);
     cur_directory.inum = inum;
     directory.push_back(cur_directory);
 
-    char parent[] = "..";
     inum = inum + 1;
-
-    /*** Edit from sabin ***/
-    // if (Directory_file_create ("/", parent, filesize, S_IFREG, S_IRUSR, inum) > 0)
-    if (Directory_file_create ("/", S_IFREG | S_IRUSR, NULL) > 0)
-    /*** Edit ended ***/
+    if (Directory_file_create ("/..", S_IFREG, S_IRUSR, NULL) > 0)
     {
         std::cerr << "file '..' creation failed." << std::endl;
         return 1;
     }
-    memcpy(cur_directory.name, parent, strlen(parent)+1);
+    // Store file name ".." and inum into the directory object
+    memcpy(cur_directory.name, "..", strlen(parent)+1);
     parent_directory.inum = inum;
+    // Store the object in the on memory list for later saving to the disk at checkpoint
     directory.push_back(parent_directory);
 
     return 0;
@@ -149,7 +131,7 @@ int Directory::Directory_create(char* path, mode_t mode)
  * Directory_open
  *
  * Parameters:
- * const char* path - directory path
+ *  const char* path - directory path
  *
  * Returns:
  *  0 on success, 1 otherwise
@@ -168,7 +150,7 @@ int Directory::Directory_open(const char* path, struct fuse_file_info* fi)
  * Directory_read
  *
  * Parameters:
- * const char* path - directory path
+ *  const char* path - directory path
  * int length - Length of bytes to read
  * void* buffer - The directory entries will be passed and stored in
  *                this buffer
@@ -181,15 +163,16 @@ int Directory::Directory_open(const char* path, struct fuse_file_info* fi)
  * into the passed buffer.
  *********************************************************************
  */
-// int Directory::Directory_read(const char* path, void* buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
-int Directory::Directory_read(char* path, void* buffer, off_t offset, struct fuse_file_info* fi)
+// int Directory::Directory_read( const char* path, void* buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
+int Directory::Directory_read(const char* path, void* buffer, off_t offset, struct fuse_file_info* fi)
 
 {
     int status = 0;
     Inode dirInode;
     File file;
 
-    char* dirname = basename(path);
+    char* ch_path = strdup(path);
+    char* dirname = basename(ch_path);
 
     // Find the inode of the target directory with its path and name
     status = dirInode.Inode_Find_Inode(dirname, path, &dirInode);
@@ -218,7 +201,7 @@ int Directory::Directory_read(char* path, void* buffer, off_t offset, struct fus
  * Directory_write
  *
  * Parameters:
- * const char* path - a path to the directory
+ *  const char* path - a path to the directory
  * void* buffer - a buffer that needs to write into
  * u_int offset - an offset of an inode in the ifile
  * u_int length - a length of bytes to write into the buffer
@@ -233,12 +216,13 @@ int Directory::Directory_read(char* path, void* buffer, off_t offset, struct fus
  */
 
 /*** Edit sabin ***/
-// int Directory::Directory_write(const char* path, void* buffer, off_t offset, size_t length)
-int Directory::Directory_write(char* path, void* buffer, off_t offset, size_t length)
+// int Directory::Directory_write( const char* path, void* buffer, off_t offset, size_t length)
+int Directory::Directory_write(const char* path, void* buffer, off_t offset, size_t length)
 /*** End edit ***/
 
 {
-    char* dirname = basename(path); 
+    char* ch_path = strdup(path);
+    char* dirname = basename(ch_path);
 
     Inode inode;
     
@@ -298,11 +282,9 @@ int Directory::Directory_free(const char* path)
  *
  * Parameters:
  * const char* path - directory path
- * string filename - current file name that needs to be created
- * u_int filesize - size of a file
- * mode_t mode - mode or the permission of the file
  * mode_t type - file or directory
- * u_int inum - inode number of the directory
+ * mode_t mode - mode or the permission of the file
+ * struct fuse_file_info* fi - fuse info.
  *
  * Returns:
  *  0 on success, 1 otherwise
@@ -312,29 +294,41 @@ int Directory::Directory_free(const char* path)
  * passed to its arguments
  *********************************************************************
  */
-
-// int Directory::Directory_file_create (const char* path, mode_t mode, struct fuse_file_info* fi)
-int Directory::Directory_file_create (char* path, mode_t mode, struct fuse_file_info* fi)
+int Directory::Directory_file_create (const char* path, mode_t type, mode_t mode, struct fuse_file_info* fi)
 {
-    Inode new_inode; // Inode for the new file
+    // Since a direct conversion from const char* to char* is invalid,
+    // the program is converting the const char* to char* using char* strdup(const char*) function.
+    char* ch_path = strdup(path);
+    // Then, extracts the basename, which is either the directory or file name, from the path
+    char* filename = basename(ch_path);
+    // A new inode object for the new file
+    Inode new_inode;
+    // A new file object for the new file
     File new_file;
+    // Since a new file has no content held, the file size is initialize to 0
     int filesize = 0;
-    char* filename = basename(path);
-    mode_t type = S_IFREG;
+    // Retrieve the last inum in the .ifile
     u_int inum;
-    int status = = new_inode.Inode_Get_Last_Inum(inum);
+    int status = new_inode.Inode_Get_Last_Inum(inum);
+    if (status > 0)
+    {
+        std::cerr << "Error: Unable to retrieve the last inum from the .ifile" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_create" << std::endl;
+        return 1;
+    }
 
     // Create a file. If successful, inode should be initialized with empty direct pointers
-    if (new_file.File_Create(&new_inode, path, filename, inum, filesize, mode, type))
+    status = new_file.File_Create(&new_inode, path, filename, inum, filesize, mode, type);
+    if (status > 0)
     {
-        std::cerr << "File create failed in Directory file creation" << std::endl;
+        std::cerr << "Error: Unable to create a new file" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_create" << std::endl;
         return 1;
     }
 
     // If the currently handling file is ifile, then store it into the globally accessible
     // inode_of_ifile, so it can be accessed in the log layer.
     // Else, store it to the globally accessible inode_of_current_file object for the log layer, again.
-    // if (filename == ".ifile")
     if(strcmp(filename, ".ifiile") == 0)
         inode_of_ifile = new_inode;
     else
@@ -343,6 +337,23 @@ int Directory::Directory_file_create (char* path, mode_t mode, struct fuse_file_
     return 0;
 }
 
+/*
+ *********************************************************************
+ * int
+ * Directory_file_open
+ *
+ * Parameters:
+ * const char* path - directory path
+ * struct fuse_file_info* fi - fuse info.
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * This function will call File_Create function, which is a public
+ * member function of a File class, to create a new file with metadata
+ * passed to its arguments
+ *********************************************************************
+ */
 int Directory_file_open(const char* path, struct fuse_file_info* fi)
 {
     Inode inode;
@@ -350,7 +361,8 @@ int Directory_file_open(const char* path, struct fuse_file_info* fi)
     int status = file.File_Open (path, &inode);
     if (status > 0)
     {
-        std::cerr << "Failed to open a file in Directory_file_open" << std::endl;
+        std::cerr << "Error: Unable to open a file" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_open" << std::endl;
         return 1;
     }
 
@@ -358,85 +370,119 @@ int Directory_file_open(const char* path, struct fuse_file_info* fi)
 }
 
 /*
- *  int
- *  Direct_file_Write
- *  Given the inum of inode, it calls File_Write to initialize the inode's direct/indirect pointers.
+ *********************************************************************
+ * int
+ * Directory_file_write
+ *
+ * Parameters:
+ * const char* path - file path
+ * void* buffer - a buffer that holds contents to be written to file
+ * off_t offset - offset of .ifile
+ * size_t length - length in bytes to be written to the log
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * Given the inum of inode, it calls File_Write to initialize the inode's direct/indirect pointers.
+ *********************************************************************
  */
-
-/*** Edit sabin ***/
-// int Directory::Directory_file_write(const char* path, void* buffer, off_t offset, size_t length)
-int Directory::Directory_file_write(char* path, void* buffer, off_t offset, size_t length)
-/*** End edit ***/
-
+int Directory::Directory_file_write(const char* path, void* buffer, off_t offset, size_t length)
 {
-    char* dirname = basename(path); 
+    char* ch_path = strdup(path);
+    char* dirname = basename(ch_path); 
 
     Inode inode;
     int status = inode.Inode_Find_Inode(dirname, path, &inode);
     if (status > 0)
     {
-         std::cerr << "Error while retrieving an inode in the Directory_write" << std::endl;
-         return 1;
+        std::cerr << "Error: Unable to find the inode" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_write" << std::endl;
+        return 1;
     }
 
+    // Retrieve the inum of the current inode
     u_int inum;
     status = inode.Inode_Get_Inum(inum);
     if (status > 0)
     {
-        std::cerr << "Error while retrieving the inum of an inode in the Directory_write" << std::endl;
+        std::cerr << "Error: Unable to retrieve the inum" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_write" << std::endl;
         return 1;
     }
 
     if (inum < 2)
     {
-        std::cerr << "Invalid inum passed to Directory file write" << std::endl;
+        std::cerr << "Error: Invalid inum. Retrieved inum < 2." << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_write" << std::endl;
         return 1;
     }
 
+    // Pass inum, offset, length, and buffer to the File_Write function
+    // to update the inode and write to log
     File file;
     status = file.File_Write(inum, offset, length, buffer);
 
     if (status > 0)
     {
-        std::cerr << "File write failed" << std::endl;
+        std::cerr << "Error: Unable to write to a file" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_write" << std::endl;
         return 1;
     }
     
     return 0;
 }
 
-/*** Edit Sabin ***/
-// int Directory::Directory_file_read(const char* path, char* buffer, off_t offset, size_t length)
-int Directory::Directory_file_read(char* path, char* buffer, off_t offset, size_t length)
-/*** Edit end ***/
+/*
+ *********************************************************************
+ * int
+ * Directory_file_read
+ *
+ * Parameters:
+ * const char* path - file path
+ * void* buffer - a buffer that holds contents to be written to file
+ * off_t offset - offset of .ifile
+ * size_t length - length in bytes to be written to the log
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * Given the inum of inode, it calls File_Write to initialize the inode's direct/indirect pointers.
+ *********************************************************************
+ */
+int Directory::Directory_file_read(const char* path, const char* buffer, off_t offset, size_t length)
 {
+    char* ch_path = strdup(path);
     char* dirname = basename(path); 
 
     Inode inode;
     int status = inode.Inode_Find_Inode(dirname, path, &inode);
     if (status > 0)
     {
-         std::cerr << "Error while retrieving an inode in the Directory_write" << std::endl;
-         return 1;
+        std::cerr << "Error: Unable to retrieve the inode" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_read" << std::endl;
+        return 1;
     }
 
     u_int inum;
     status = inode.Inode_Get_Inum(inum);
     if (status > 0)
     {
-        std::cerr << "Error while retrieving the inum of an inode in the Directory_write" << std::endl;
+        std::cerr << "Error: Unable to retrieve the inum of inode" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_read" << std::endl;
         return 1;
     }
 
     if (inum < 2)
     {
-        std::cerr << "Invalid inum passed to Directory file write" << std::endl;
+        std::cerr << "Error: Invalid inum. Retrieved inum < 2." << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_read" << std::endl;
         return 1;
     }
     
     if (inum < sizeof(Inode::Container))
     {
-        std::cerr << "Invalid inum passed to Directory_file_read " << inum << std::endl;
+        std::cerr << "Error: inum cannot be < size of one inode " << inum << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_read" << std::endl;
         return 1;
     }
 
@@ -445,52 +491,92 @@ int Directory::Directory_file_read(char* path, char* buffer, off_t offset, size_
     if (status > 0)
     {
         std::cerr << "Error while reading a file in Directory_file_read" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_read" << std::endl;
         return 1;
     }
 
     return 0;
 }
 
-int DirectoryDirectory_file_rename(const char* org_path, const char* new_path)
+/*
+ *********************************************************************
+ * int
+ * Directory_file_rename
+ *
+ * Parameters:
+ * const char* org_path - original file path
+ * const char* new_path - Desired new path 
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * With the new path name, find the current (or target) file that the
+ * user wishes to rename and update the inode's meta data
+ *********************************************************************
+ */
+int Directory::Directory_file_rename(const char* org_path,  const char* new_path)
 {
-    char* org_name = basename(org_path);
-    char* new_name = basename(new_path);
+    char* ch_org_path = strdup(org_path);
+    char* org_name = basename(ch_org_path);
+    char* ch_new_path = strdup(new_path);
+    char* new_name = basename(ch_new_path);
 
     Inode inode;
     int status = inode.Inode_Find_Inode(org_name, org_path, &inode);
     if (status > 0)
     {
-         std::cerr << "Error while retrieving an inode in the Directory_file_rename" << std::endl;
-         return 1;
+        std::cerr << "Error: Unable to retrieve the inode with the given path " << inum << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_rename" << std::endl;
+        return 1;
     }
 
     status = inode.Inode_Rename(new_name, new_path);
     if (status > 0)
     {
-         std::cerr << "Error while renaming in the Directory_file_rename" << std::endl;
-         return 1;
+        std::cerr << "Error: Unable to rename the file " << inum << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_rename" << std::endl;
+        return 1;
     }
 
     return 0;
 }
 
+/*
+ *********************************************************************
+ * int
+ * Directory_file_chmod
+ *
+ * Parameters:
+ * const char* path - file or directory path
+ * mode_t mode - a new mode that the user wants to set
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * With a given path and mode, modify the current mode of the file or
+ * directory with the new mode.
+ *********************************************************************
+ */
 int Directory::Directory_chmod(const char* path, mode_t mode)
 {
+    char* ch_path = strdup(path);
     char* name = basename(path); 
 
     Inode inode;
     int status = inode.Inode_Find_Inode(name, path, &inode);
     if (status > 0)
     {
-         std::cerr << "Error while retrieving an inode in the Directory_chmod" << std::endl;
-         return 1;
+        std::cerr << "Error: Unable to retrieve the inode with the given path " << inum << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_chmod" << std::endl;
+        return 1;
     }
 
     status = inode.Inode_Chmod(&inode, mode);
     if (status > 0)
     {
-         std::cerr << "Error while changing the mode of a file or directory Directory_chmod" << std::endl;
-         return 1;
+        std::cerr << "Error: Unable to change the mode of the file " << inum << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_chmod" << std::endl;
+        return 1;
     }
     
     // Add the inode at the back of the list, which will be added to the .file at checkpoint 
@@ -498,23 +584,43 @@ int Directory::Directory_chmod(const char* path, mode_t mode)
     return 0;
 }
 
+/*
+ *********************************************************************
+ * int
+ * Directory_file_chown
+ *
+ * Parameters:
+ * const char* path - file or directory path
+ * uid_t uid - new owner's id
+ * gid_t gid - new group id
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * With a given path, uid, and gid, modify the current mode of the file
+ * or directory's uid and gid
+ *********************************************************************
+ */
 int Directory::Directory_chown(const char* path, uid_t uid, gid_t id)
 {
-    char* name = basename(path); 
+    char* ch_path = strdup(path);
+    char* name = basename(ch_path); 
 
     Inode inode;
     int status = inode.Inode_Find_Inode(name, path, &inode);
     if (status > 0)
     {
-         std::cerr << "Error while retrieving an inode in the Directory_chmod" << std::endl;
-         return 1;
+        std::cerr << "Error: Unable to retrieve the inode with the given path " << inum << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_chown" << std::endl;
+        return 1;
     }
 
     status = inode.Inode_Chown(&inode, uid, id);
     if (status > 0)
     {
-         std::cerr << "Error while changing the mode of a file or directory Directory_chmod" << std::endl;
-         return 1;
+        std::cerr << "Error: Unable to change uid and gid of the file " << inum << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_chown" << std::endl;
+        return 1;
     }
     
     // Add the inode at the back of the list, which will be added to the .file at checkpoint 
