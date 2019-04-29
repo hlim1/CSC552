@@ -24,16 +24,14 @@
 #include <sys/stat.h>
 #include <libgen.h>
 
-#include <file.h>
+#include "file.h"
 #include "inode.h"
 
 typedef struct DirMap
 {
-    const char name[20];
+    char name[20];
     u_int inum;
 } DirMap;
-
-
 
 // Extern variables
 extern std::list<DirMap> directory; // This holds the in-memory directory <name,inum> list
@@ -50,19 +48,20 @@ class Directory
         // Functions for directory
         int Directory_initialization(struct fuse_conn_info* conn);
         int Directory_create(const char* path, mode_t mode);
+        int Directory_write(const char* path, void* buffer, off_t offset, size_t length);
         int Directory_open(const char* path, struct fuse_file_info* fi);
-        int Directory_read(const char* path, void* buffer, off_t offset, struct fuse_file_info* fi);
+        int Directory_read(const char* path, fuse_fill_dir_t filler, void* buffer, off_t offset, struct fuse_file_info* fi);
         int Directory_free(const char* path);
         int Directory_chmod(const char* path, mode_t mode);
         int Directory_chown(const char* path, uid_t uid, gid_t id);
 
         // Functions for file
         int Directory_file_create(const char* path, mode_t type, mode_t mode, struct fuse_file_info* fi);
-        int Directory_file_open(const const char* path, struct fuse_file_info* fi);
+        int Directory_file_open(const char* path, struct fuse_file_info* fi);
         int Directory_file_write(const char* path, void* buffer, off_t offset, size_t length);
-        int Directory_file_read(const char* path, const char* buffer, off_t offset, size_t length);
+        int Directory_file_read(const char* path, void* buffer, off_t offset, size_t length);
         int Directory_file_truncate(const char* path, int size);
-        int Directory_file_rename(const char* org_path, const const char* new_path);
+        int Directory_file_rename(const char* org_path, const char* new_path);
         int Directory_file_free(const char* path);
 };
 

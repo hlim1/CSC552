@@ -32,7 +32,7 @@
  *
  *********************************************************************
  */
-int File::File_Create (Inode* inode, char* path, char* filename, u_int inum, int filesize, mode_t mode, mode_t type)
+int File::File_Create (Inode* inode, const char* path, const char* filename, u_int inum, int filesize, mode_t mode, mode_t type)
 {
     // Get the current time
     time_t cur_time;
@@ -50,9 +50,10 @@ int File::File_Create (Inode* inode, char* path, char* filename, u_int inum, int
     return 0;
 }
 
-int File::File_Open(char* path, Inode* inode)
+int File::File_Open(const char* path, Inode* inode)
 {
-    char* filename = basename(path);
+    char* ch_path = strdup(path);
+    char* filename = basename(ch_path);
 
     int status = f_inode.Inode_Find_Inode(filename, path, inode);
     if (status > 0)

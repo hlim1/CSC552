@@ -106,7 +106,7 @@ int Directory::Directory_create(const char* path, mode_t mode)
         return 1;
     }
     // Store file name "." and inum into the directory object
-    memcpy(cur_directory.name, ".", strlen(current)+1);
+    memcpy(cur_directory.name, ".", strlen(".")+1);
     cur_directory.inum = inum;
     directory.push_back(cur_directory);
 
@@ -117,7 +117,7 @@ int Directory::Directory_create(const char* path, mode_t mode)
         return 1;
     }
     // Store file name ".." and inum into the directory object
-    memcpy(cur_directory.name, "..", strlen(parent)+1);
+    memcpy(cur_directory.name, "..", strlen("..")+1);
     parent_directory.inum = inum;
     // Store the object in the on memory list for later saving to the disk at checkpoint
     directory.push_back(parent_directory);
@@ -164,7 +164,7 @@ int Directory::Directory_open(const char* path, struct fuse_file_info* fi)
  *********************************************************************
  */
 // int Directory::Directory_read( const char* path, void* buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
-int Directory::Directory_read(const char* path, void* buffer, off_t offset, struct fuse_file_info* fi)
+int Directory::Directory_read(const char* path, fuse_fill_dir_t filler, void* buffer, off_t offset, struct fuse_file_info* fi)
 
 {
     int status = 0;
@@ -449,10 +449,10 @@ int Directory::Directory_file_write(const char* path, void* buffer, off_t offset
  * Given the inum of inode, it calls File_Write to initialize the inode's direct/indirect pointers.
  *********************************************************************
  */
-int Directory::Directory_file_read(const char* path, const char* buffer, off_t offset, size_t length)
+int Directory::Directory_file_read(const char* path, void* buffer, off_t offset, size_t length)
 {
     char* ch_path = strdup(path);
-    char* dirname = basename(path); 
+    char* dirname = basename(ch_path); 
 
     Inode inode;
     int status = inode.Inode_Find_Inode(dirname, path, &inode);
@@ -525,7 +525,7 @@ int Directory::Directory_file_rename(const char* org_path,  const char* new_path
     int status = inode.Inode_Find_Inode(org_name, org_path, &inode);
     if (status > 0)
     {
-        std::cerr << "Error: Unable to retrieve the inode with the given path " << inum << std::endl;
+        std::cerr << "Error: Unable to retrieve the inode with the given path " << std::endl;
         std::cerr << "File: directory.cpp. Function: Directory_file_rename" << std::endl;
         return 1;
     }
@@ -533,7 +533,7 @@ int Directory::Directory_file_rename(const char* org_path,  const char* new_path
     status = inode.Inode_Rename(new_name, new_path);
     if (status > 0)
     {
-        std::cerr << "Error: Unable to rename the file " << inum << std::endl;
+        std::cerr << "Error: Unable to rename the file " << std::endl;
         std::cerr << "File: directory.cpp. Function: Directory_file_rename" << std::endl;
         return 1;
     }
@@ -560,13 +560,13 @@ int Directory::Directory_file_rename(const char* org_path,  const char* new_path
 int Directory::Directory_chmod(const char* path, mode_t mode)
 {
     char* ch_path = strdup(path);
-    char* name = basename(path); 
+    char* name = basename(ch_path); 
 
     Inode inode;
     int status = inode.Inode_Find_Inode(name, path, &inode);
     if (status > 0)
     {
-        std::cerr << "Error: Unable to retrieve the inode with the given path " << inum << std::endl;
+        std::cerr << "Error: Unable to retrieve the inode with the given path " << std::endl;
         std::cerr << "File: directory.cpp. Function: Directory_chmod" << std::endl;
         return 1;
     }
@@ -574,7 +574,7 @@ int Directory::Directory_chmod(const char* path, mode_t mode)
     status = inode.Inode_Chmod(&inode, mode);
     if (status > 0)
     {
-        std::cerr << "Error: Unable to change the mode of the file " << inum << std::endl;
+        std::cerr << "Error: Unable to change the mode of the file " << std::endl;
         std::cerr << "File: directory.cpp. Function: Directory_chmod" << std::endl;
         return 1;
     }
@@ -610,7 +610,7 @@ int Directory::Directory_chown(const char* path, uid_t uid, gid_t id)
     int status = inode.Inode_Find_Inode(name, path, &inode);
     if (status > 0)
     {
-        std::cerr << "Error: Unable to retrieve the inode with the given path " << inum << std::endl;
+        std::cerr << "Error: Unable to retrieve the inode with the given path " << std::endl;
         std::cerr << "File: directory.cpp. Function: Directory_chown" << std::endl;
         return 1;
     }
@@ -618,7 +618,7 @@ int Directory::Directory_chown(const char* path, uid_t uid, gid_t id)
     status = inode.Inode_Chown(&inode, uid, id);
     if (status > 0)
     {
-        std::cerr << "Error: Unable to change uid and gid of the file " << inum << std::endl;
+        std::cerr << "Error: Unable to change uid and gid of the file " << std::endl;
         std::cerr << "File: directory.cpp. Function: Directory_chown" << std::endl;
         return 1;
     }

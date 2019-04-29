@@ -16,7 +16,7 @@
  * last modified time (which is the creation time at the initialization time), 4 direct pointers,
  * and 1 indirect pointer
  */
-int Inode::Inode_Initialization(char* filename, char* path, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type)
+int Inode::Inode_Initialization(const char* filename, const char* path, u_int filesize, u_int inum, time_t cur_time, mode_t mode, mode_t type)
 {
     memcpy(container.m_file, filename, strlen(filename)+1);
     memcpy(container.m_path, path, strlen(path)+1);
@@ -97,7 +97,7 @@ int Inode::Inode_Update_Last_Access()
  * This is useful when we do not know or have any information about the inode, such as
  * inum, other than the file name and path.
  */
-int Inode::Inode_Find_Inode(char* filename, char* path, Inode* found_inode)
+int Inode::Inode_Find_Inode(const char* filename, const char* path, Inode* found_inode)
 {
     int status = 1;
     // Open .ifile
@@ -283,7 +283,7 @@ int Inode::Inode_Check_Mode(uid_t uid)
 /*
  *  Update the name and path of a file or directory
  */
-int Inode::Inode_Rename(char* new_path, char* new_name)
+int Inode::Inode_Rename(const char* new_path, const char* new_name)
 {
     memcpy(container.m_file, new_name, strlen(filename)+1);
     memcpy(container.m_path, new_path, strlen(path)+1);

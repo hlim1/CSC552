@@ -34,8 +34,8 @@ class File
 
     public:
         File() {};  // Default constructor
-        int File_Create(Inode* inode, char* path, char* filename, u_int inum, int filesize, mode_t mode, mode_t type);
-        int File_Open(char* path, Inode* inode);
+        int File_Create(Inode* inode, const char* path, const char* filename, u_int inum, int filesize, mode_t mode, mode_t type);
+        int File_Open(const char* path, Inode* inode);
         int File_Write(u_int inum, off_t offset, size_t length, void* buffer);
         int File_Read(u_int inum, off_t offset, size_t length, void* buffer);
         int File_Free(u_int inum);
