@@ -34,7 +34,7 @@ typedef struct DirMap
 } DirMap;
 
 // Extern variables
-extern std::list<DirMap> directory; // This holds the in-memory directory <name,inum> list
+extern std::list<DirMap> directories; // This holds the in-memory directory <name,inum> list
 extern std::list<Inode> list_of_inodes;
 extern Inode inode_of_ifile;        // This holds the inode of ifile
 

@@ -4,7 +4,9 @@
  Directory dir;
 /*** End Edit ***/ 
 
-Inode inode_of_ifile; // = new Inode();
+Inode inode_of_ifile;
+std::list<Inode> list_of_inodes;
+std::list<DirMap> directories;
 
 /*
  *********************************************************************
@@ -108,7 +110,7 @@ int Directory::Directory_create(const char* path, mode_t mode)
     // Store file name "." and inum into the directory object
     memcpy(cur_directory.name, ".", strlen(".")+1);
     cur_directory.inum = inum;
-    directory.push_back(cur_directory);
+    directories.push_back(cur_directory);
 
     inum = inum + 1;
     if (Directory_file_create ("/..", S_IFREG, S_IRUSR, NULL) > 0)
@@ -120,7 +122,7 @@ int Directory::Directory_create(const char* path, mode_t mode)
     memcpy(cur_directory.name, "..", strlen("..")+1);
     parent_directory.inum = inum;
     // Store the object in the on memory list for later saving to the disk at checkpoint
-    directory.push_back(parent_directory);
+    directories.push_back(parent_directory);
 
     return 0;
 }
@@ -354,7 +356,7 @@ int Directory::Directory_file_create (const char* path, mode_t type, mode_t mode
  * passed to its arguments
  *********************************************************************
  */
-int Directory_file_open(const char* path, struct fuse_file_info* fi)
+int Directory::Directory_file_open(const char* path, struct fuse_file_info* fi)
 {
     Inode inode;
     File file;

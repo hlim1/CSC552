@@ -34,7 +34,7 @@ struct Block_Ptr
 {
     u_int segment;
     u_int block;
-} block_Ptr;
+};
 
 class Inode
 {
