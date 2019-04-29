@@ -60,7 +60,6 @@ int Inode::Inode_Write(u_int index, u_int seg, u_int block_address)
         ind_ptr.block = block_address;
 
         // Add rest of the blocks to the indirect pointer list
-        this->container.m_indirect_pointers.push_back(ind_ptr);
     }
 
     return 0;
@@ -187,7 +186,7 @@ int Inode::Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::lis
         std::cerr << "Direct pointer array is empty" << std::endl;
         return 1;
     }
-
+/*
     // Set indirect pointers
     Block_Ptr ind_ptr;
     std::list<Block_Ptr>::iterator iter;
@@ -200,11 +199,11 @@ int Inode::Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::lis
 
     if (ind_block_ptr.size() != inode.container.m_indirect_pointers.size())
         return 1;
-
+*/
     return 1;
 }
 
-int Inode::Inode_Get_Last_Inum(uint_t &inum)
+int Inode::Inode_Get_Last_Inum(u_int &inum)
 {
     int status = 1;
     // Open .ifile
@@ -219,11 +218,6 @@ int Inode::Inode_Get_Last_Inum(uint_t &inum)
         Inode inodes[size];
         ifile.read((char*)&inodes, length);
 
-        if (inodes[0] == NULL)
-        {
-            std::cerr << "Error. ifile was not read properly in Inode_Get_Last_Inum." << std::endl;
-            return 1;
-        }
         inum = inode[0].container.m_inum;
         return 0;
     }
@@ -240,7 +234,7 @@ int Inode::Inode_Get_Last_Inum(uint_t &inum)
  */
 int Inode::Inode_Chmod(Inode* inode, mode_t mode)
 {
-    int status = inode.Inode_Check_Mode(mode);
+    int status = inode->Inode_Check_Mode(mode);
     if (status > 0)
     {
         std::cerr << "Invalid mode was received in Inode_chmod. Input mode: " << mode << std::endl;

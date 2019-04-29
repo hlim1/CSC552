@@ -2,92 +2,11 @@
 
 Directory* f_directory;
 
-/*
-// static struct fuse_operations lfs_oper {
-static struct fuse_operations prefix_oper {
-    .getattr = lfs_fileGetattr,
-    .readlink = lfs_ReadLink,
-    .getdir = NULL,
-    .mknod = NULL,
-    .mkdir = lfs_makeDirectory,
-    .unlink = lfs_Unlink,
-    .rmdir = lfs_Rmdir,
-    .symlink = lfs_SymLink,
-    .rename = lfs_Rename,
-    .link = lfs_HardLink,
-    .chmod = NULL,
-    .chown = NULL,
-    .truncate = lfs_Truncate,
-    .utime = NULL,
-    .open = lfs_fileOpen,
-    .read = lfs_directoryRead,
-    .write = lfs_directoryWrite,
-    .statfs = lfs_Statfs,
-    .flush = lfs_Flush,
-    .release = lfs_File_Release,
-    .fsync = NULL,
-    .setxattr = NULL,
-    .getxattr = NULL,
-    .listxattr = NULL,
-    .removexattr = NULL,
-    .opendir = lfs_Opendir,
-    .readdir = lfs_directoryReaddir,
-    .releasedir = NULL,
-    .fsyncdir = NULL,
-    .init = lfs_Initialize,
-    .destroy = lfs_Destroy,
-    .access = lfs_access,
-    .create = lfs_fileCreate,
-    .ftruncate = NULL,
-    .fgetattr = NULL,
-    .lock = NULL,
-    .utimens = NULL,
-    .bmap = NULL,
-    .flag_nullpath_ok = 0,
-    .flag_nopath = 0,
-    .flag_utime_omit_ok = 1,
-    .flag_reserved = 29,
-    .ioctl = NULL,
-    .poll = NULL,
-    .write_buf = NULL,
-    .read_buf = NULL,
-    .flock = NULL,
-    .fallocate = NULL,
-};
-*/
-
-
-
-// static struct fuse_operations_comp2 prefix_oper {
-static struct fuse_operations prefix_oper {
-    .init       =   imp_init,
-    .getattr    =   imp_file_getattr,
-    .unlink     =   imp_unlink,
-    .rmdir      =   imp_rmdir,
-    .open       =   imp_file_open,
-    .opendir    =   imp_dir_open,
-    .read       =   imp_file_read,
-    .write      =   imp_file_write,
-    .statfs     =   imp_statfs,
-    .release    =   imp_file_release,
-    .releasedir =   imp_dir_release,
-    .destroy    =   imp_destroy,
-    .create     =   imp_file_create,
-    .link       =   imp_link,
-    .symlink    =   imp_symlink,
-    .truncate   =   imp_truncate,
-    .rename     =   imp_rename,
-    .chmod      =   imp_chmod,
-    .chown      =   imp_chown,
-};
-
-
 // Initialize LFS f_directory layer. This will create a root f_directory "/".
-int imp_init(struct fuse_conn_info *conn)
+void* imp_init(struct fuse_conn_info *conn)
 {
     std::cout << "Initializing fuse in imp_init" << std::endl;
     f_directory = new Directory();
-    return 0;
 }
 
 int imp_file_getattr(const char* path, struct stat*)
@@ -108,7 +27,7 @@ int imp_file_read(const char* path, char* buffer, size_t length, off_t offset, s
     int status = f_directory->Directory_file_read(path, buffer, offset, length);
     return status;
 }
-int imp_file_write(const char* path, char* buffer, off_t offset, size_t length, struct fuse_file_info* fi)
+int imp_file_write(const char* path, const char* buffer, size_t length, off_t offset, struct fuse_file_info* fi)
 {
     std::cout << "File write in imp_file_write" << std::endl;
     int status = f_directory->Directory_file_write(path, buffer, offset, length);
@@ -155,7 +74,7 @@ int imp_dir_open(const char* path, struct fuse_file_info* fi)
     return status;
 }
 
-int imp_dir_read(const char* path, fuse_fill_dir_t filler, char* buffer, off_t offset, struct fuse_file_info* fi)
+int imp_dir_read(const char* path, void* buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
 {
     std::cout << "Read and return one or more f_directory entries to the caller. imp_dir_read." << std::endl;
     int status = f_directory->Directory_read(path, filler, buffer, offset, fi);
@@ -197,11 +116,11 @@ int imp_symlink(const char* src_path, const char* dest_path)
     return NOTSUPPORTED;
 }
 
-int imp_truncate(const char* path, size_t length)
+int imp_truncate(const char* path, off_t offset)
 {
     std::cout << "Truncate or extend the given file so that it is precisely size bytes long. imp_truncate."
               << std::endl;
-    int status = f_directory->Directory_file_truncate(path, length);
+    int status = f_directory->Directory_file_truncate(path, offset);
     return status;
 }
 

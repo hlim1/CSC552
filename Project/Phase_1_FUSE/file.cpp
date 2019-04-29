@@ -89,7 +89,7 @@ int File::File_Open(const char* path, Inode* inode)
  *
  *********************************************************************
  */
-int File::File_Write(u_int inum, off_t offset, size_t length, void* buffer)
+int File::File_Write(u_int inum, off_t offset, size_t length, const char* buffer)
 {
     LogAddress* logAddress;
     // Passing 0 for the block number as it needs only the first block address

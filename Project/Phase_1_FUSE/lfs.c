@@ -12,8 +12,6 @@
 
 #include "log.h"
 
-using namespace std;
-
 int main(int argc, char *argv[]){
 
 	// LFS process has the following command-line options.
