@@ -205,7 +205,6 @@ int Inode::Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::lis
 
 int Inode::Inode_Get_Last_Inum(u_int &inum)
 {
-    int status = 1;
     // Open .ifile
     std::ifstream ifile(".ifile", std::ifstream::binary);
     if (ifile)
@@ -218,7 +217,7 @@ int Inode::Inode_Get_Last_Inum(u_int &inum)
         Inode inodes[size];
         ifile.read((char*)&inodes, length);
 
-        inum = inode[0].container.m_inum;
+        inum = inodes[0].container.m_inum;
         return 0;
     }
     else
@@ -240,7 +239,7 @@ int Inode::Inode_Chmod(Inode* inode, mode_t mode)
         std::cerr << "Invalid mode was received in Inode_chmod. Input mode: " << mode << std::endl;
     }
 
-    inode.container.m_node = mode;
+    inode->container.m_mode = mode;
     return 0;
 }
 
@@ -249,8 +248,8 @@ int Inode::Inode_Chmod(Inode* inode, mode_t mode)
  */
 int Inode::Inode_Chown(Inode* inode, uid_t uid, gid_t id)
 {
-    inode.container.m_owner = uid;
-    inode.container.m_group = id;
+    inode->container.m_owner = uid;
+    inode->container.m_group = id;
 
     return 0;
 }
@@ -262,7 +261,7 @@ int Inode::Inode_Check_Mode(uid_t uid)
 {
     int status = 1;
 
-    uid fileMode[15] = {S_IRWXU, S_IRUSR, S_IWUSR, S_IXUSR, S_IRWXG, S_IRGRP, S_IWGRP, S_IXGRP,
+    uid_t fileMode[15] = {S_IRWXU, S_IRUSR, S_IWUSR, S_IXUSR, S_IRWXG, S_IRGRP, S_IWGRP, S_IXGRP,
                         S_IRWXO, S_IROTH, S_IWOTH, S_IXOTH, S_ISUID, S_ISGID, S_ISVTX};
 
     for (int i = 0; i < 15; i++)
@@ -279,8 +278,8 @@ int Inode::Inode_Check_Mode(uid_t uid)
  */
 int Inode::Inode_Rename(const char* new_path, const char* new_name)
 {
-    memcpy(container.m_file, new_name, strlen(filename)+1);
-    memcpy(container.m_path, new_path, strlen(path)+1);
+    memcpy(container.m_file, new_name, strlen(new_name)+1);
+    memcpy(container.m_path, new_path, strlen(new_path)+1);
 
     return 0;
 }
