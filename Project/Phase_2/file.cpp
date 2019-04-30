@@ -67,7 +67,6 @@ int File::File_Open(const char* path, Inode* inode)
     return 0;
 }
 
-
 /*
  *********************************************************************
  * int

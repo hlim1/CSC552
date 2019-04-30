@@ -300,6 +300,9 @@ int Directory::Directory_write(const char* path, void* buffer, off_t offset, siz
  */
 int Directory::Directory_free(const char* path)
 {
+    File file;
+    int status = file.File_Free(path);
+
     return 0;
 }
 
@@ -358,6 +361,16 @@ int Directory::Directory_file_create (const char* path, mode_t type, mode_t mode
         }
         else
         {
+            std::list<Inode>::iterator iter;
+            for (iter = list_of_inodes.begin(); iter != list_of_inodes.end(); iter++)
+            {
+                if (strcmp(iter->container.m_path, path) == 0)
+                {
+                    std::cerr << "Error: File already exist" << std::endl;
+                    std::cerr << "File: directory.cpp. Function: Directory_create" << std::endl;
+                }
+            }
+
             status = 0;
             Inode last_inode_in_mem = list_of_inodes.back();
             status = last_inode_in_mem.Inode_Get_Inum(inum);
