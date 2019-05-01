@@ -91,7 +91,9 @@ int File::File_Open(const char* path, Inode* inode)
  */
 int File::File_Write(u_int inum, off_t offset, size_t length, const char* buffer)
 {
-    LogAddress* logAddress;
+    LogAddress logAddress1;
+    LogAddress* logAddress = &logAddress1;
+    
     // Passing 0 for the block number as it needs only the first block address
     int status = Log_Write(inum, 0, length, buffer, logAddress);
     if (status)
@@ -238,5 +240,5 @@ int File::File_Read(u_int inum, off_t offset, size_t length, void* buffer)
  */
 int File::File_Free(u_int inum)
 {
-
+    return 0;
 }
