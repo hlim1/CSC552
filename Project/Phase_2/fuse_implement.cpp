@@ -2,7 +2,6 @@
 
 Directory* f_directory;
 
-// Initialize LFS f_directory layer. This will create a root f_directory "/".
 void* imp_init(struct fuse_conn_info *conn)
 {
     std::cout << "Initializing fuse in imp_init" << std::endl;
@@ -38,7 +37,7 @@ int imp_file_write(const char* path, const char* buffer, size_t length, off_t of
     return status;
 }
 
-int access(const char* path, int mask)
+int imp_access(const char* path, int mask)
 {
     std::cout << "Accessing the path. Always return zero(0)." << std::endl;
     return 0;
@@ -54,11 +53,6 @@ int imp_rmdir(const char* path)
 {
     // NOT IMPLEMENTED YET
     std::cout << "Removing f_directory. imp_rmdir." << std::endl;
-    return 0;
-}
-
-int imp_access(const char* path, int mast)
-{
     return 0;
 }
 
