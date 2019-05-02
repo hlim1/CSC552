@@ -690,7 +690,7 @@ int Log_Free(LogAddress logAddress, u_int length){
 bool isLive(LogAddress logAddress){
 	Segment segment;
 	loadSegment(logAddress.segment, &segment);
-	if(segment.segSummary.blockInfos[logAddress.block].isLive) return true;
+	if(!(segment.segSummary.blockInfos[logAddress.block].isLive)) return false;
 		
 	u_int inum = segment.segSummary.blockInfos[logAddress.block].inum;
 	u_int block_offset = segment.segSummary.blockInfos[logAddress.block].block_offset;
