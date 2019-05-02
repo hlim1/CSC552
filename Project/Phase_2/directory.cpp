@@ -301,7 +301,9 @@ int Directory::Directory_write(const char* path, void* buffer, off_t offset, siz
 int Directory::Directory_free(const char* path)
 {
     File file;
-    int status = file.File_Free(path);
+    u_int dummyNode;
+    // int status = file.File_Free(path);
+    int status = file.File_Free(dummyNode);
 
     return 0;
 }
