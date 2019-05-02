@@ -807,3 +807,32 @@ int Directory::Directory_file_free(const char* path)
 
     return 0;
 }
+
+/*
+ *********************************************************************
+ * int
+ * Directory_statfs
+ *
+ * Parameters:
+ * const char* path - Path to a root
+ * struct statvfs* stbuf - Fuse struct to collect filesystem stat.
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * The is return the current status of the filesystem by calling
+ * File_Statfs function in the file layer.
+ *********************************************************************
+ */
+int Directory::Directory_statfs(const char* path, struct statvfs* stbuf)
+{
+    File file;
+    int status = file.File_Statfs(path, stbuf);
+    if (status > 0)
+    {
+        std::cerr << "Error: Failed to retrieve the filesystem state" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_statfs" << std::endl;
+        return 1;
+    }
+    return 0;
+}

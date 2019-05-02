@@ -292,3 +292,31 @@ int File::File_Free(u_int inum)
 
     return 0;
 }
+
+/*
+ *********************************************************************
+ * int
+ * File_Statfs
+ *
+ * Parameters:
+ * const char* path - Path to a root
+ * struct statvfs* stbuf - Fuse struct to collect filesystem stat.
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * The is return the current status of the filesystem.
+ *********************************************************************
+ */
+int File::File_Statfs(const char* path, struct statvfs* stbuf)
+{
+    Inode inode;
+
+    stbuf->f_bsize = superBlock.block_size;
+    stbuf->f_blocks = superBlock.blocks;
+    stbuf->f_namemax = 20;
+    stbuf->f_bfree = superBlock.bfree;
+    stbuf->f_files = inode.Inode_Get_Total_Num_Of_Inodes();
+
+    return 0;
+}

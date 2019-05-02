@@ -331,3 +331,20 @@ void Inode::Inode_Set_Stbuf(struct stat* stbuf, Inode file_inode)
     stbuf->st_mode = file_inode.container.m_mode | file_inode.container.m_type;
     stbuf->st_blksize = superBlock.block_size;
 }
+
+int Inode::Inode_Get_Total_Num_Of_Inodes()
+{
+     std::ifstream ifile(".ifile", std::ifstream::binary);
+    if (ifile)
+    {
+        ifile.seekg(0, ifile.end);
+        int length = ifile.tellg();
+        int size = length / sizeof(Inode::Container);
+        return size;
+    }
+    else
+    {
+        std::cerr << "Error: Failed to open .ifile" << std::endl;
+        std::cerr << "File: inode.cpp. Function: Inode_Get_Total_Num_Of_Inodes" << std::endl;
+    }
+}

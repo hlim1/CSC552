@@ -115,6 +115,8 @@ typedef struct SuperBlock {
 	u_int block_size;	// size of the block in sectors 
 	u_int num_segments;	// number of segments in flash
 	u_int wearLimit;	// wear limit of erase blocks
+    u_int blocks;
+    u_int bfree;
 	// CR cr;				// checkpoint region
 
 	// u_int cr_addresses[2];
