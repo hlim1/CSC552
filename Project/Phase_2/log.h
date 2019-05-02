@@ -147,6 +147,7 @@ extern SuperBlock superBlock;
 
 typedef struct SegUsage {
 	u_int num_live_bytes;	// number of live bytes in the segment
+	u_int num_live_blocks;
 	std::time_t most_recent_modified_time; // most recent modified time of any block in the segment
 } SegUsage;
 
@@ -213,6 +214,9 @@ typedef struct BlockInfo {
 	// char uID[20]; //The id combines the inum and the version number of the file.
 	int type; // To determine if this block is a file block or inode block or dir block or seg 
 	// usage block
+
+	bool isLive;	// This stores if the block is live
+
 } BlockInfo;
 
 typedef struct SegSummary {

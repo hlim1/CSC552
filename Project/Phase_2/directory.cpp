@@ -301,6 +301,7 @@ int Directory::Directory_write(const char* path, void* buffer, off_t offset, siz
 int Directory::Directory_free(const char* path)
 {
     File file;
+
     char* ch_path = strdup(path);
     char* filename = basename(ch_path);
     Inode new_inode;
@@ -318,6 +319,7 @@ int Directory::Directory_free(const char* path)
         std::cerr << "Error: Failed to free up the memory of a directory" << std::endl;
         std::cerr << "File: directory.cpp. Function: Directory_free." << std::endl;
     }
+
 
     return 0;
 }
