@@ -145,6 +145,7 @@ extern SuperBlock superBlock;
 
 typedef struct SegUsage {
 	u_int num_live_bytes;	// number of live bytes in the segment
+	u_int num_live_blocks;
 	std::time_t most_recent_modified_time; // most recent modified time of any block in the segment
 } SegUsage;
 

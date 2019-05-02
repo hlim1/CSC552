@@ -725,16 +725,17 @@ void computeLiveNess(){
 
 			logAddress.block = this_block;
 			if(isLive(logAddress)){
-				num_live_bytes++;
+				num_live_blocks++;
 			}
 
 		}
 
-		segUsgTbl.segUsages[this_segnum].num_live_bytes = num_live_bytes;
+		segUsgTbl.segUsages[this_segnum].num_live_blocks = num_live_blocks;
 
 	}
 
 }
+
 
 // list of clean segments;
 bool *isCleanSegments;
@@ -743,6 +744,7 @@ bool *isCleanSegments;
 int cleanSegments(){
 
 	int rc = 0;
+	int threshold = ceil(0.5*superBlock.num_bytes_)
 
 	isCleanSegments = (bool*)malloc(superBlock.num_segments*sizeof(bool));
 	
@@ -750,11 +752,21 @@ int cleanSegments(){
 
 	// for(int i = 0; i<currentSegment; i++){
 	for(int i=0; i<superBlock.num_segments; i++){
-		// get the number of live bytes in the segment
-	
-
+		// get the number of live blocks in the segment
+		if(segUsgTbl.segUsages[i].num_live_blocks < threshold){
+			// TODO: Mark this segment for cleaning
+		}
 	}
 
+	// for (segment in markedSegment){
+		// TODO: copy live blocks from markedSegment to clean segment
+		// For each block that is live, copy it to the clean segment
+		// get the inum and block offset for the copied block
+		// get the inode of the inum
+		// update the block offset of the inode with the new logAddress 
+	// }
+
+	// TOODO: Update the list of clean segments
 
 	return rc;
 
