@@ -74,6 +74,7 @@ class Inode
         int Inode_Get_Inode(u_int inum, Inode* inode);
 
         int Inode_Check_Mode (uid_t uid);
+        int Inode_Get_Total_Num_Of_Inodes();
         void Inode_Set_Stbuf(struct stat* stbuf, Inode file_inode);
 };
 

@@ -59,7 +59,8 @@ int imp_rmdir(const char* path)
 int imp_statfs(const char* path, struct statvfs* stbuf)
 {
     std::cout << "Return statistics about the filesystem. imp_statfs" << std::endl;
-    return NOTSUPPORTED;
+    Directory directory;
+    return directory.Directory_statfs(path, stbuf);
 }
 
 int imp_file_release(const char* path, struct fuse_file_info *fi)

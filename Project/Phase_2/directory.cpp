@@ -301,6 +301,7 @@ int Directory::Directory_write(const char* path, void* buffer, off_t offset, siz
 int Directory::Directory_free(const char* path)
 {
     File file;
+
     char* ch_path = strdup(path);
     char* filename = basename(ch_path);
     Inode new_inode;
@@ -318,6 +319,7 @@ int Directory::Directory_free(const char* path)
         std::cerr << "Error: Failed to free up the memory of a directory" << std::endl;
         std::cerr << "File: directory.cpp. Function: Directory_free." << std::endl;
     }
+
 
     return 0;
 }
@@ -805,5 +807,34 @@ int Directory::Directory_file_free(const char* path)
         std::cerr << "File: directory.cpp. Function: Directory_file_free." << std::endl;
     }
 
+    return 0;
+}
+
+/*
+ *********************************************************************
+ * int
+ * Directory_statfs
+ *
+ * Parameters:
+ * const char* path - Path to a root
+ * struct statvfs* stbuf - Fuse struct to collect filesystem stat.
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * The is return the current status of the filesystem by calling
+ * File_Statfs function in the file layer.
+ *********************************************************************
+ */
+int Directory::Directory_statfs(const char* path, struct statvfs* stbuf)
+{
+    File file;
+    int status = file.File_Statfs(path, stbuf);
+    if (status > 0)
+    {
+        std::cerr << "Error: Failed to retrieve the filesystem state" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_statfs" << std::endl;
+        return 1;
+    }
     return 0;
 }

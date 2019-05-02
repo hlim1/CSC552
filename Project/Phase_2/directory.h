@@ -62,6 +62,7 @@ class Directory
         int Directory_file_rename(const char* org_path, const char* new_path);
         int Directory_file_free(const char* path);
         int Directory_file_getattr(const char* path, struct stat* stat);
+        int Directory_statfs(const char* path, struct statvfs* stbuf);
 };
 
 /*** Edit by Sabin ***/

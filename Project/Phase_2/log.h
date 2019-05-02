@@ -115,6 +115,8 @@ typedef struct SuperBlock {
 	u_int block_size;	// size of the block in sectors 
 	u_int num_segments;	// number of segments in flash
 	u_int wearLimit;	// wear limit of erase blocks
+    u_int blocks;
+    u_int bfree;
 	// CR cr;				// checkpoint region
 
 	// u_int cr_addresses[2];
@@ -145,6 +147,7 @@ extern SuperBlock superBlock;
 
 typedef struct SegUsage {
 	u_int num_live_bytes;	// number of live bytes in the segment
+	u_int num_live_blocks;
 	std::time_t most_recent_modified_time; // most recent modified time of any block in the segment
 } SegUsage;
 

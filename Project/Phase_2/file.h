@@ -40,6 +40,7 @@ class File
         int File_Read(u_int inum, off_t offset, size_t length, void* buffer);
         int File_Free(u_int inum);
         int File_Getattr(const char* path, struct stat* stbuf);
+        int File_Statfs(const char* path, struct statvfs* stbuf);
 };
 
 #endif
