@@ -33,6 +33,7 @@ int Inode::Inode_Initialization(const char* filename, const char* path, u_int fi
         container.m_direct_pointer[i].segment = 0;
         container.m_direct_pointer[i].block = 0;
     }
+    container.m_indirect_pointers = NULL;
 
     container.m_mode          = mode;
     container.m_type          = type;
@@ -45,23 +46,33 @@ int Inode::Inode_Initialization(const char* filename, const char* path, u_int fi
 /*
  * Updates the inode's direct and indirect pointers
  */
-int Inode::Inode_Write(u_int index, u_int seg, u_int block_address)
+int Inode::Inode_Write(Inode* inode, size_t length, int number_of_blocks, LogAddress* logAddress)
 {
-    // Updating first 4 direct pointers
-    if (index < 4)
-    {
-        this->container.m_direct_pointer[index].segment = seg;
-        this->container.m_direct_pointer[index].block = block_address;
-    }
-    else
-    {
-        // Temporary block that will be pushed back to the indirect pointer list
-        Block_Ptr ind_ptr;
-        ind_ptr.segment = seg;
-        ind_ptr.block = block_address;
+    int current_segment = logAddress->segment;
+    int current_block_addr = logAddress->block;
+    std::list<Block_Ptr> ptrs;
 
-        // Add rest of the blocks to the indirect pointer list
+    for (int  i = 0; i < number_of_blocks; i++)
+    {
+        // Updating first 4 direct pointers
+        if (i < 4)
+        {
+            inode->container.m_direct_pointer[i].segment = current_segment;
+            inode->container.m_direct_pointer[i].block = current_block_addr++;
+        }
+        else
+        {
+            // Temporary block that will be pushed back to the indirect pointer list
+            Block_Ptr dir_ptr;
+            dir_ptr.segment = current_segment;
+            dir_ptr.block = current_block_addr;
+
+            ptrs.push_back(dir_ptr);
+        }
     }
+
+    // Set an indirect pointers to the list of direct pointers to the blocks
+    // inode->container.m_indirect_pointers = &(ptrs);
 
     return 0;
 }
@@ -135,6 +146,44 @@ int Inode::Inode_Find_Inode(const char* filename, const char* path, Inode* found
     return 0;
 }
 
+int Inode::Inode_Get_Inode(u_int inum, Inode* inode)
+{
+     int status = 1;
+    // Open .ifile
+    std::ifstream ifile(".ifile", std::ifstream::binary);
+    if (ifile)
+    {
+        ifile.seekg(0, ifile.end);
+        int length = ifile.tellg();
+        int size = length / sizeof(Inode::Container);
+        ifile.seekg(0, ifile.beg);
+
+        Inode inodes[size];
+        ifile.read((char*)&inodes, length);
+
+        for (int i = 0; i < size; i++)
+        {
+            if (inodes[i].container.m_inum == inum)
+            {
+                //memcpy(found_inode, inodes[i], sizeof(Inode::Container));
+                *inode = inodes[i];
+                status = 0;
+            }   
+        }
+        if (status == 1)
+        {
+            std::cerr << "Unable to find the correct inode for either the filename or path or both" << std::endl;
+            return 1;
+        }
+    }
+    else
+    {
+        std::cerr << "File: inode.cpp. Function: Inode_Find_Inode" << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
 /*
  *  When we know about the inum and the offset of the file, use the offset to retrieve the inode and return the inode.
  */
@@ -164,7 +213,7 @@ int Inode::Inode_Getter(u_int inum, u_int offset, Inode* inode)
  *  Updates the passed empty direct pointer array and indirect pointer list with the current
  *  inode's pointers to blocks
  */
-int Inode::Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::list<Block_Ptr>& ind_block_ptr)
+int Inode::Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], Block_Ptr* ind_block_ptr)
 {
     int status = 0;
     // If the first m_direct_pointer is NULL (empty), it's an error that the blocks are not properly
@@ -187,20 +236,9 @@ int Inode::Inode_Get_Block_Ptr(Inode inode, Block_Ptr dir_block_ptr[4], std::lis
         std::cerr << "Direct pointer array is empty" << std::endl;
         return 1;
     }
-/*
-    // Set indirect pointers
-    Block_Ptr ind_ptr;
-    std::list<Block_Ptr>::iterator iter;
-    for (iter = inode.container.m_indirect_pointers.begin(); iter != inode.container.m_indirect_pointers.end(); iter++)
-    {
-        ind_ptr.segment = iter->segment;
-        ind_ptr.block = iter->block;
-        ind_block_ptr.push_back(ind_ptr);
-    }
 
-    if (ind_block_ptr.size() != inode.container.m_indirect_pointers.size())
-        return 1;
-*/
+    ind_block_ptr = inode.container.m_indirect_pointers;
+
     return 1;
 }
 
