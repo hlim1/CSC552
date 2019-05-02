@@ -51,7 +51,6 @@ int imp_unlink(const char* path)
 
 int imp_rmdir(const char* path)
 {
-    // NOT IMPLEMENTED YET
     std::cout << "Removing f_directory. imp_rmdir." << std::endl;
     return 0;
 }
@@ -129,7 +128,6 @@ int imp_truncate(const char* path, off_t offset)
 {
     std::cout << "Truncate or extend the given file so that it is precisely size bytes long. imp_truncate."
               << std::endl;
-    // int status = f_directory->Directory_file_truncate(path, offset);
     return NOTSUPPORTED;
 }
 
