@@ -211,6 +211,9 @@ typedef struct BlockInfo {
 	// char uID[20]; //The id combines the inum and the version number of the file.
 	int type; // To determine if this block is a file block or inode block or dir block or seg 
 	// usage block
+
+	bool isLive;	// This stores if the block is live
+
 } BlockInfo;
 
 typedef struct SegSummary {

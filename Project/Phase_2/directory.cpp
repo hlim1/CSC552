@@ -96,7 +96,7 @@ int Directory::Directory_create(const char* path, mode_t mode)
         if (list_of_inodes.empty())
         {
             // Only case that it is valid is when it's a root directory creation
-            if (path != "/")
+            if (strcmp(path, "/") > 0)
             {
                 std::cerr << "Error: Unable to retrieve the last inum of inode - from file" << std::endl;
                 std::cerr << "File: directory.cpp. Function: Directory_create" << std::endl;
@@ -289,7 +289,7 @@ int Directory::Directory_write(const char* path, void* buffer, off_t offset, siz
  * Directory_free
  *
  * Parameters:
- * u_int inum - inode number of the directory
+ * const char* path - Path to directory
  *
  * Returns:
  *  0 on success, 1 otherwise
@@ -301,9 +301,25 @@ int Directory::Directory_write(const char* path, void* buffer, off_t offset, siz
 int Directory::Directory_free(const char* path)
 {
     File file;
-    u_int dummyNode;
-    // int status = file.File_Free(path);
-    int status = file.File_Free(dummyNode);
+
+    char* ch_path = strdup(path);
+    char* filename = basename(ch_path);
+    Inode new_inode;
+    u_int inum;
+    int status = new_inode.Inode_Get_Last_Inum(inum);
+    if (status > 0)
+    {
+        std::cerr << "Error: Failed to retrieve inode" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_free." << std::endl;
+    }
+
+    status = file.File_Free(inum);
+    if (status > 0)
+    {
+        std::cerr << "Error: Failed to free up the memory of a directory" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_free." << std::endl;
+    }
+
 
     return 0;
 }
@@ -349,7 +365,7 @@ int Directory::Directory_file_create (const char* path, mode_t type, mode_t mode
         if (list_of_inodes.empty())
         {
             // Only case that it is valid is when it's a root directory creation
-            if (path != "/")
+            if (strcmp(path, "/") > 0)
             {
                 std::cerr << path << std::endl;
                 std::cerr << "Error: Unable to retrieve the last inum of inode - from file" << std::endl;
@@ -755,7 +771,41 @@ int Directory::Directory_file_getattr(const char* path, struct stat* stbuf)
     return 0;
 }
 
+/*
+ *********************************************************************
+ * int
+ * Directory_file_free
+ *
+ * Parameters:
+ * const char* path - Path to file
+ *
+ * Returns:
+ *  0 on success, 1 otherwise
+ *
+ * When the file gets deleted, we need to free up the occupied
+ * segement
+ *********************************************************************
+ */
 int Directory::Directory_file_free(const char* path)
-{
+{  
+    File file;
+    char* ch_path = strdup(path);
+    char* filename = basename(ch_path);
+    Inode new_inode;
+    u_int inum;
+    int status = new_inode.Inode_Get_Last_Inum(inum);
+    if (status > 0)
+    {
+        std::cerr << "Error: Failed to retrieve inode" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_free." << std::endl;
+    }
+
+    status = file.File_Free(inum);
+    if (status > 0)
+    {
+        std::cerr << "Error: Failed to free up the memory of a file" << std::endl;
+        std::cerr << "File: directory.cpp. Function: Directory_file_free." << std::endl;
+    }
+
     return 0;
 }

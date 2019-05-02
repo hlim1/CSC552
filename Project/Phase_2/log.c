@@ -633,6 +633,17 @@ int writeToTail(u_int inum, u_int block, u_int length, const void *buffer, LogAd
 
 }
 
+// This function sets the input block dead
+void setBlockDead(LogAddress logAddress){
+	// read the segment with the given address
+	Segment segment;
+
+	loadSegment(logAddress.segment, &segment);
+
+	segment.segSummary.blockInfos[logAddress.block].isLive = false;
+
+}
+
 /*
  *********************************************************************
  * int
@@ -656,8 +667,99 @@ int Log_Free(LogAddress logAddress, u_int length){
 	// update the segment usage table to set the length bytes free
 	// at the given address	
 
+	u_int num_blocks = ceil(length/num_bytes_in_block);
+	// Set live block to false for all the blocks in the logAddress
+
+	for(u_int i=0; i<num_blocks; i++){
+
+
+		setBlockDead(logAddress);
+		logAddress.block++;
+
+		if(logAddress.block == superBlock.segment_size){
+			logAddress.block=0;
+			logAddress.segment++;
+		}
+
+	}
+
 	return 0;
 }
+
+// This function returns if a block is live
+bool isLive(LogAddress logAddress){
+	Segment segment;
+	loadSegment(logAddress.segment, &segment);
+	if(segment.segSummary.blockInfos[logAddress.block].isLive) return true;
+		
+	u_int inum = segment.segSummary.blockInfos[logAddress.block].inum;
+	u_int block_offset = segment.segSummary.blockInfos[logAddress.block].block_offset;
+
+	// if the inode of the inum has the same logAddress in the given block offset
+
+	/*
+	if(isEqual(get_inode_from_inum().block[block_offset], logAddress)){	
+		return true;
+	}
+	*/
+	return false;
+
+}
+
+// This function computes the liveness of each segment and each block and stores it
+// in the segment usage table
+void computeLiveNess(){
+
+	Segment segment;
+	LogAddress logAddress;
+	u_int num_live_bytes;
+
+	for(u_int this_segnum = 0; this_segnum<superBlock.num_segments; this_segnum++){
+
+		logAddress.segment = this_segnum;
+		loadSegment(this_segnum, &segment);
+		num_live_bytes = 0;
+
+
+		for(u_int this_block=0; this_block<superBlock.segment_size; this_block++){
+
+			logAddress.block = this_block;
+			if(isLive(logAddress)){
+				num_live_bytes++;
+			}
+
+		}
+
+		segUsgTbl.segUsages[this_segnum].num_live_bytes = num_live_bytes;
+
+	}
+
+}
+
+// list of clean segments;
+bool *isCleanSegments;
+// This scans the segments and finds N segment to clean and returns M new clean segments
+// 
+int cleanSegments(){
+
+	int rc = 0;
+
+	isCleanSegments = (bool*)malloc(superBlock.num_segments*sizeof(bool));
+	
+	u_int currentSegment = segmentCache[tailSegIndex].segSummary.this_segment;
+
+	// for(int i = 0; i<currentSegment; i++){
+	for(int i=0; i<superBlock.num_segments; i++){
+		// get the number of live bytes in the segment
+	
+
+	}
+
+
+	return rc;
+
+}
+
 
 // Opens the flash file and loads the log structures in memory
 // If the flash is empty (just created), isFlashEmpty is set to true and

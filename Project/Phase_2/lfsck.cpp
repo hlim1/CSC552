@@ -8,7 +8,7 @@
  *  1. in-use inodes that do not have directory entries
  *  2. directory entries that refer to unused inodes
  *  3. incorrect segment summary information
- *  It will use flash ayer to convert the LFS data structure to JSON,
+ *  It will use flash layer to convert the LFS data structure to JSON,
  *  then processes JSON and checks for the consistency
  */
 
@@ -17,23 +17,36 @@
 #include <string>
 
 // Class header files list under here:
+#include "json/include/nlohmann/json.hpp"
 #include "inode.h"
 #include "file.h"
 #include "directory.h"
+#include "flash.h"
 
 int main (int argc, char* argv[])
 {
-    if (argc < 2)
+    if (argc < 3)
     {
         std::cerr << "Command not valid. Please, enter in a format of $lfsck <file_name>." << std::endl;
         return 1;
     }
 
     std::string file = argv[1];
-    int size;
-    Inode* root;
-    Inode* ifile;
-    Inode* inode;
+
+    Flash flash;
+    uint_t* blocks;
+    // Open the flash file with the given file name
+    flash = flash.Flash_Open (file, FLASH_SILENT, blocks);
+
+    // Retrieve the root directory's inode
+    Inode root_inode;
+    int status = inode.Inode_Get_Inode(0, &root_inode);
+    if (status > 0)
+    {
+        std::cerr << "Error: Failed to retrieve the root directory's inode" << std::endl;
+        std::cerr << "File: lfsck.cpp. Function: main.c" << std:endl;
+        return 1;
+    }
 
     return 0;
 }

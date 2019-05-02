@@ -50,22 +50,6 @@ int File::File_Create (Inode* inode, const char* path, const char* filename, u_i
     return 0;
 }
 
-/*
- *********************************************************************
- * int
- * File_Open
- *
- * Parameters:
- * const char* path - Path of current file
- * Inode* inode - An empty inode that needs to be filled
- *
- * Returns:
- *  0 on success, 1 otherwise
- *
- * With the given path, retrieve the inode and pass it back to the caller
- *
- *********************************************************************
- */
 int File::File_Open(const char* path, Inode* inode)
 {
     char* ch_path = strdup(path);
@@ -106,9 +90,7 @@ int File::File_Open(const char* path, Inode* inode)
  */
 int File::File_Write(u_int inum, off_t offset, size_t length, const char* buffer)
 {
-    LogAddress logAddress1;
-    LogAddress* logAddress = &logAddress1;
-    
+    LogAddress* logAddress;
     // Passing 0 for the block number as it needs only the first block address
     int status = Log_Write(inum, 0, length, buffer, logAddress);
     if (status)
@@ -132,10 +114,23 @@ int File::File_Write(u_int inum, off_t offset, size_t length, const char* buffer
     }
 
     // Setting direct pointers of a file inode
-    int number_of_blocks = ceil(length / (FLASH_SECTOR_SIZE * superBlock.block_size));
-    status = found_inode.Inode_Write(&found_inode, length, number_of_blocks, logAddress);
+    int current_segment = logAddress->segment;
+    int current_block_addr = logAddress->block;
 
-    status = found_inode.Inode_Update_Last_Access();
+    int number_of_blocks = ceil(length / (FLASH_SECTOR_SIZE * superBlock.block_size));
+
+    for (int i = 0; i < number_of_blocks; i++)
+    {
+        // Update the currently opened file inode's block pointers
+        status = found_inode.Inode_Write(i, current_segment, current_block_addr);
+        if (status)
+        {
+            std::cerr << "Inode write failed" << std::endl;
+            return 1;
+        }
+        // Update the current_block address and segs to the next block and segment addresses
+        current_block_addr += 1;
+    }
 
     return 0;
 }
@@ -176,7 +171,7 @@ int File::File_Read(u_int inum, off_t offset, size_t length, void* buffer)
     LogAddress logAddress;
 
     Block_Ptr dir_block_ptr[4];
-    Block_Ptr* ind_block_ptr;
+    std::list<Block_Ptr> ind_block_ptr;
     status = f_inode.Inode_Get_Block_Ptr(found_inode, dir_block_ptr, ind_block_ptr);
 
     if (status == 1)
@@ -197,10 +192,12 @@ int File::File_Read(u_int inum, off_t offset, size_t length, void* buffer)
         else
         {
             // Assign indirect pointers to the log address
-            for (int i = 0; i < sizeof(ind_block_ptr); i++)
+            std::list<Block_Ptr>::iterator iter;
+            for (iter = ind_block_ptr.begin(); iter != ind_block_ptr.end(); iter++)
             {
-                logAddress.segment = ind_block_ptr[i].segment;
-                logAddress.block = ind_block_ptr[i].block;
+                Block_Ptr ind_ptr;
+                logAddress.segment = iter->segment;
+                logAddress.block = iter->block;
             }
         }
         status = Log_Read(logAddress, length, buffer);
@@ -243,7 +240,7 @@ int File::File_Getattr(const char* path, struct stat* stbuf)
     if (status > 0)
     {
         // std::cerr << "Error: Unable to retrieve the inode with given path" << std::endl;
-        std::cerr << "File: file.cpp. Function: File_Getattr" << std::endl;
+        std::cerr << "File: inode.cpp. Function: File_Getattr" << std::endl;
         return 1;
     }
     
@@ -273,24 +270,5 @@ int File::File_Getattr(const char* path, struct stat* stbuf)
  */
 int File::File_Free(u_int inum)
 {
-    Inode inode;
-    int status = inode.Inode_Get_Inode(inum, &inode);
-    if (status > 0)
-    {
-        std::cerr << "Error: No inode found" << std::endl;
-        std::cerr << "File: file.cpp. Function: File_Free" << std::endl;
-    }
 
-    LogAddress logAddress;
-    logAddress.segment = inode.container.m_direct_pointer[0].segment;
-    logAddress.block = inode.container.m_direct_pointer[0].block;
-
-    status = Log_Free(logAddress, inode.container.m_filesize);
-    if (status > 0)
-    {
-        std::cerr << "Error: Failed to free up the file" << std::endl;
-        std::cerr << "File: file.cpp. Function: File_Free." << std::endl;
-    }
-
-    return 0;
 }
